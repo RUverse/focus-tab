@@ -3,11 +3,15 @@ export const MODES = ["dark", "light"];
 export const DISTRACTION_MIN_MINUTES = 1;
 export const DISTRACTION_MAX_MINUTES = 240;
 
+// Per-mode clock colour used when the user hasn't picked a custom one.
+export const DEFAULT_CLOCK_COLORS = Object.freeze({ dark: "#d7d7d7", light: "#252525" });
+
 export const DEFAULT_SETTINGS = Object.freeze({
   mode: "dark",
   name: "Friend",
   hour24: false,
   showSeconds: true,
+  clockColor: "",
   blockList: [],
   focusActive: false,
   distractionUntil: 0
@@ -103,6 +107,10 @@ export function normalizeSettings(settings = {}) {
   normalized.name = String(normalized.name || DEFAULT_SETTINGS.name).trim() || DEFAULT_SETTINGS.name;
   normalized.hour24 = Boolean(normalized.hour24);
   normalized.showSeconds = Boolean(normalized.showSeconds);
+
+  // Empty string means "follow the theme default"; otherwise keep a valid hex.
+  const color = String(normalized.clockColor || "").trim().toLowerCase();
+  normalized.clockColor = /^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(color) ? color : "";
 
   const hosts = Array.isArray(normalized.blockList) ? normalized.blockList : [];
   normalized.blockList = [...new Set(hosts.map(normalizeHost).filter(Boolean))];

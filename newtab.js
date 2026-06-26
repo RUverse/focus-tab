@@ -76,6 +76,9 @@ function renderMode() {
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
+
+  // Custom clock colour overrides the theme foreground; empty falls back to it.
+  timeNode.style.color = settings.clockColor || "";
 }
 
 function renderClock() {
@@ -85,9 +88,9 @@ function renderClock() {
   const minutes = pad(now.getMinutes());
   const seconds = pad(now.getSeconds());
 
-  timeNode.textContent = settings.showSeconds
-    ? `${displayHour}.${minutes}.${seconds}`
-    : `${displayHour}.${minutes}`;
+  const parts = settings.showSeconds ? [displayHour, minutes, seconds] : [displayHour, minutes];
+  // Wrap each separator so it can be nudged to the vertical centre of the digits.
+  timeNode.innerHTML = parts.join('<span class="time-dot">.</span>');
 
   periodNode.textContent = settings.hour24 ? "" : rawHour >= 12 ? "PM" : "AM";
   greetingNode.textContent = `${getGreeting(rawHour)}, ${settings.name}`;

@@ -5,7 +5,8 @@ import {
   normalizeHost,
   getFocusState,
   DISTRACTION_MIN_MINUTES,
-  DISTRACTION_MAX_MINUTES
+  DISTRACTION_MAX_MINUTES,
+  DEFAULT_CLOCK_COLORS
 } from "./shared.js";
 
 const focusEl = document.getElementById("focus");
@@ -24,6 +25,8 @@ const blockCancel = document.getElementById("blockCancel");
 const blockSection = document.getElementById("blockSection");
 const blockLock = document.getElementById("blockLock");
 const clockFormatButtons = Array.from(document.querySelectorAll("[data-hour24]"));
+const clockColorInput = document.getElementById("clockColorInput");
+const clockColorReset = document.getElementById("clockColorReset");
 
 const distractionModal = document.getElementById("distractionModal");
 const dial = document.getElementById("dial");
@@ -64,6 +67,9 @@ blockCancel.addEventListener("click", () => closeModal(blockModal));
 clockFormatButtons.forEach((button) => {
   button.addEventListener("click", () => saveSettings({ hour24: button.dataset.hour24 === "true" }));
 });
+
+clockColorInput.addEventListener("input", () => saveSettings({ clockColor: clockColorInput.value }));
+clockColorReset.addEventListener("click", () => saveSettings({ clockColor: "" }));
 
 distractionCancel.addEventListener("click", () => closeModal(distractionModal));
 distractionConfirm.addEventListener("click", onConfirmDistraction);
@@ -137,6 +143,10 @@ function renderSettingsModal() {
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
+
+  // Show the picked colour, or the current theme default when none is set.
+  clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[settings.mode] || DEFAULT_CLOCK_COLORS.dark;
+  clockColorReset.hidden = !settings.clockColor;
 
   // The block list is locked while actively focused, so you can't edit your way
   // out of the sites you committed to. On a break it's editable again.
