@@ -48,7 +48,7 @@
           <div class="focus-focused">
             <p class="focus-status">Focused.</p>
             <button type="button" class="distraction-open" id="distractionOpen">
-              I'm done being productive now I can have a bit of distractions
+              I need a break
             </button>
           </div>
 
@@ -128,25 +128,59 @@
     </div>
 
     <div class="modal-backdrop" id="distractionModal" hidden>
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="distractionModalTitle">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="distractionModalTitle" data-step="choice">
         <h2 class="modal-title" id="distractionModalTitle">Take a break</h2>
-        <p class="modal-sub">Drag the handle to choose how long, then start the break.</p>
 
-        <div class="dial" id="dial">
-          <svg viewBox="0 0 240 240" aria-hidden="true" focusable="false">
-            <circle class="dial-track" cx="120" cy="120" r="96"></circle>
-            <circle class="dial-progress" id="dialProgress" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"></circle>
-            <circle class="dial-handle" id="dialHandle" cx="120" cy="24" r="13"></circle>
-          </svg>
-          <div class="dial-readout" id="dialReadout">10 min</div>
+        <!-- Step 1: pick the kind of break -->
+        <div class="break-step" data-step-panel="choice">
+          <p class="modal-sub">How do you want to spend it?</p>
+          <div class="break-choices">
+            <button type="button" class="break-choice" id="breakMove">Let's move that body</button>
+            <button type="button" class="break-choice" id="breakConsume">Let's consume some content</button>
+          </div>
+          <div class="modal-actions">
+            <span class="spacer"></span>
+            <button type="button" class="ghost" id="distractionCancel">Cancel</button>
+          </div>
         </div>
 
-        <input class="reason-input" id="reasonInput" type="text" placeholder="enter your reason" autocomplete="off" spellcheck="false" aria-label="Reason for the break">
+        <!-- Step 2a: move (away from keyboard) -->
+        <div class="break-step" data-step-panel="afk">
+          <div class="afk">
+            <p class="afk-label">AFK</p>
+            <p class="afk-sub">Away from keyboard. Go move — your blocks stay on while you're gone.</p>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="ghost" id="afkBack">Back</button>
+            <span class="spacer"></span>
+            <button type="button" class="primary" id="afkClose">Close</button>
+          </div>
+        </div>
 
-        <div class="modal-actions">
-          <span class="spacer"></span>
-          <button type="button" class="ghost" id="distractionCancel">Cancel</button>
-          <button type="button" class="primary" id="distractionConfirm" disabled>Start break</button>
+        <!-- Step 2b: consume content (timed, reasoned break) -->
+        <div class="break-step" data-step-panel="consume">
+          <p class="modal-sub">Drag the handle to choose how long, then start the break.</p>
+
+          <div class="dial-area">
+            <ul class="reason-history" id="reasonHistory" aria-hidden="true"></ul>
+            <div class="dial" id="dial">
+            <svg viewBox="0 0 240 240" aria-hidden="true" focusable="false">
+              <circle class="dial-bg" cx="120" cy="120" r="96"></circle>
+              <circle class="dial-track" cx="120" cy="120" r="96"></circle>
+              <circle class="dial-progress" id="dialProgress" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"></circle>
+              <circle class="dial-handle" id="dialHandle" cx="120" cy="24" r="13"></circle>
+            </svg>
+            <div class="dial-readout" id="dialReadout">10 min</div>
+            </div>
+          </div>
+
+          <input class="reason-input" id="reasonInput" type="text" placeholder="enter your reason" autocomplete="off" spellcheck="false" aria-label="Reason for the break">
+
+          <div class="modal-actions">
+            <button type="button" class="ghost" id="consumeBack">Back</button>
+            <span class="spacer"></span>
+            <button type="button" class="primary" id="distractionConfirm" disabled>Start break</button>
+          </div>
         </div>
       </div>
     </div>

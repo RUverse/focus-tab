@@ -6,7 +6,8 @@ import {
   getFocusState,
   DISTRACTION_MIN_MINUTES,
   DISTRACTION_MAX_MINUTES,
-  DEFAULT_CLOCK_COLORS
+  DEFAULT_CLOCK_COLORS,
+  MAX_RECENT_REASONS
 } from "./shared.js";
 
 const focusEl = document.getElementById("focus");
@@ -30,10 +31,17 @@ const clockColorInput = document.getElementById("clockColorInput");
 const clockColorReset = document.getElementById("clockColorReset");
 
 const distractionModal = document.getElementById("distractionModal");
+const distractionDialog = distractionModal.querySelector(".modal");
+const breakMove = document.getElementById("breakMove");
+const breakConsume = document.getElementById("breakConsume");
+const afkBack = document.getElementById("afkBack");
+const afkClose = document.getElementById("afkClose");
+const consumeBack = document.getElementById("consumeBack");
 const dial = document.getElementById("dial");
 const dialProgress = document.getElementById("dialProgress");
 const dialHandle = document.getElementById("dialHandle");
 const dialReadout = document.getElementById("dialReadout");
+const reasonHistory = document.getElementById("reasonHistory");
 const reasonInput = document.getElementById("reasonInput");
 const distractionCancel = document.getElementById("distractionCancel");
 const distractionConfirm = document.getElementById("distractionConfirm");
@@ -77,8 +85,19 @@ clockColorInput.addEventListener("input", () => saveSettings({ clockColor: clock
 clockColorReset.addEventListener("click", () => saveSettings({ clockColor: "" }));
 
 distractionCancel.addEventListener("click", () => closeModal(distractionModal));
+breakMove.addEventListener("click", () => setBreakStep("afk"));
+breakConsume.addEventListener("click", () => setBreakStep("consume"));
+afkBack.addEventListener("click", () => setBreakStep("choice"));
+afkClose.addEventListener("click", () => closeModal(distractionModal));
+consumeBack.addEventListener("click", () => setBreakStep("choice"));
 distractionConfirm.addEventListener("click", onConfirmDistraction);
 reasonInput.addEventListener("input", syncConfirmEnabled);
+reasonInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    onConfirmDistraction();
+  }
+});
 dial.addEventListener("pointerdown", onDialPointerDown);
 
 document.addEventListener("keydown", (event) => {
@@ -226,8 +245,34 @@ function openDistractionModal() {
   setMinutes(selectedMinutes);
   reasonInput.value = "";
   syncConfirmEnabled();
+  renderReasonHistory();
   distractionModal.hidden = false;
-  reasonInput.focus();
+  setBreakStep("choice");
+}
+
+// Past reasons sit faded behind the dial — oldest at the top, the most recent
+// nearest the input, so the list reads as a running history.
+function renderReasonHistory() {
+  reasonHistory.replaceChildren();
+  [...settings.recentReasons].reverse().forEach((reason) => {
+    const li = document.createElement("li");
+    li.textContent = reason;
+    reasonHistory.append(li);
+  });
+}
+
+// The break modal is a small wizard: choose a break type, then either step away
+// (AFK) or set up a timed "consume content" break.
+function setBreakStep(step) {
+  distractionDialog.dataset.step = step;
+
+  if (step === "choice") {
+    breakMove.focus();
+  } else if (step === "consume") {
+    reasonInput.focus();
+  } else if (step === "afk") {
+    afkClose.focus();
+  }
 }
 
 // A break can only start once a reason of at least MIN_REASON_LENGTH is given.
@@ -240,7 +285,12 @@ async function onConfirmDistraction() {
     return;
   }
 
-  await saveSettings({ distractionUntil: Date.now() + selectedMinutes * 60000 });
+  const reason = reasonInput.value.trim();
+  // Keep the newest first, drop any duplicate of this reason, and cap the list.
+  const recentReasons = [reason, ...settings.recentReasons.filter((item) => item !== reason)]
+    .slice(0, MAX_RECENT_REASONS);
+
+  await saveSettings({ distractionUntil: Date.now() + selectedMinutes * 60000, recentReasons });
   closeModal(distractionModal);
 }
 

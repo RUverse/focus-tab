@@ -616,12 +616,107 @@ button {
   display: none;
 }
 
+/* Break modal steps */
+.break-step {
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal[data-step="choice"] [data-step-panel="choice"],
+.modal[data-step="afk"] [data-step-panel="afk"],
+.modal[data-step="consume"] [data-step-panel="consume"] {
+  display: flex;
+}
+
+.break-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.break-choice {
+  min-height: 52px;
+  padding: 0 16px;
+  border: 1px solid #444444;
+  background: transparent;
+  color: #f1f1f1;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.break-choice:hover,
+.break-choice:focus-visible {
+  border-color: #f1f1f1;
+  background: #1c1c1c;
+}
+
+.afk {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 0 12px;
+  text-align: center;
+}
+
+.afk-label {
+  margin: 0;
+  font-size: 3.4rem;
+  font-weight: 850;
+  letter-spacing: 0.04em;
+}
+
+.afk-sub {
+  margin: 0;
+  max-width: 260px;
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
 /* Distraction dial */
+.dial-area {
+  position: relative;
+  margin: 4px 0 0;
+}
+
+/* Faded list of previous break reasons, sitting behind the dial. */
+.reason-history {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: hidden;
+  pointer-events: none;
+  /* Older entries fade out toward the top. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 70%);
+  mask-image: linear-gradient(to bottom, transparent, #000 70%);
+}
+
+.reason-history li {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #f1f1f1;
+  opacity: 0.32;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .dial {
   position: relative;
+  z-index: 1;
   width: 240px;
   max-width: 100%;
-  margin: 4px auto 0;
+  margin: 0 auto;
 }
 
 .dial svg {
@@ -629,6 +724,11 @@ button {
   width: 100%;
   height: auto;
   touch-action: none;
+}
+
+.dial-bg {
+  fill: #111111;
+  fill-opacity: 0.9;
 }
 
 .dial-track {

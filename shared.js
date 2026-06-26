@@ -15,8 +15,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
   clockColor: "",
   blockList: [],
   focusActive: false,
-  distractionUntil: 0
+  distractionUntil: 0,
+  recentReasons: []
 });
+
+// How many past break reasons we keep around to show behind the picker.
+export const MAX_RECENT_REASONS = 7;
 
 export const QUOTES = Object.freeze([
   {
@@ -121,6 +125,12 @@ export function normalizeSettings(settings = {}) {
 
   const until = Number(normalized.distractionUntil);
   normalized.distractionUntil = Number.isFinite(until) && until > 0 ? until : 0;
+
+  const reasons = Array.isArray(normalized.recentReasons) ? normalized.recentReasons : [];
+  normalized.recentReasons = reasons
+    .map((reason) => String(reason || "").trim())
+    .filter(Boolean)
+    .slice(0, MAX_RECENT_REASONS);
 
   return normalized;
 }
