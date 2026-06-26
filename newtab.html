@@ -19,12 +19,23 @@
 
       <section class="clock-layout" aria-label="Clock and quote">
         <div class="time-meta">
-          <span class="period" id="period">PM</span>
-          <span class="greeting" id="greeting">Afternoon, Friend</span>
           <span class="date" id="date">10-4-2019</span>
+          <span class="greeting" id="greeting">Afternoon, Friend</span>
         </div>
 
         <div class="time" id="time">4.19.18</div>
+
+        <div class="progress-bars" id="progressBars" hidden>
+          <div class="progress-bar" role="progressbar" aria-label="Progress through the day" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressDayBar">
+            <span class="progress-fill" id="progressDay"></span>
+          </div>
+          <div class="progress-bar" role="progressbar" aria-label="Progress through the month" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressMonthBar">
+            <span class="progress-fill" id="progressMonth"></span>
+          </div>
+          <div class="progress-bar" role="progressbar" aria-label="Progress through the year" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressYearBar">
+            <span class="progress-fill" id="progressYear"></span>
+          </div>
+        </div>
 
         <figure class="quote-block">
           <blockquote id="quoteText">If you wait until you feel like doing something, you will likely never accomplish it.</blockquote>
@@ -72,6 +83,14 @@
             <div class="segmented" role="group" aria-label="Clock format">
               <button type="button" class="seg-button" data-hour24="false">12h</button>
               <button type="button" class="seg-button" data-hour24="true">24h</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <span class="setting-label">Progress bars</span>
+            <div class="segmented" role="group" aria-label="Progress bars">
+              <button type="button" class="seg-button" data-progress="false">Off</button>
+              <button type="button" class="seg-button" data-progress="true">On</button>
             </div>
           </div>
 

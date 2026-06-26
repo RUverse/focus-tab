@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   name: "Friend",
   hour24: false,
   showSeconds: true,
+  showProgressBars: false,
   clockColor: "",
   blockList: [],
   focusActive: false,
@@ -107,6 +108,7 @@ export function normalizeSettings(settings = {}) {
   normalized.name = String(normalized.name || DEFAULT_SETTINGS.name).trim() || DEFAULT_SETTINGS.name;
   normalized.hour24 = Boolean(normalized.hour24);
   normalized.showSeconds = Boolean(normalized.showSeconds);
+  normalized.showProgressBars = Boolean(normalized.showProgressBars);
 
   // Empty string means "follow the theme default"; otherwise keep a valid hex.
   const color = String(normalized.clockColor || "").trim().toLowerCase();

@@ -98,20 +98,7 @@ button {
   color: currentColor;
 }
 
-.period {
-  font-size: 0.8125rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  opacity: 0.65;
-}
-
-.greeting {
-  display: block;
-  font-size: clamp(1.25rem, 2.4vw, 1.75rem);
-  font-weight: 700;
-}
-
+.greeting,
 .date {
   display: block;
   font-size: clamp(0.875rem, 1.4vw, 1.05rem);
@@ -136,6 +123,33 @@ button {
   /* Lift the baseline dots to the vertical centre of the digits. */
   transform: translateY(-0.25em);
   scale: 0.8;
+}
+
+.progress-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: min(90%, 500px);
+  /* Pull the bars up close under the clock, against the layout gap. */
+  /* margin-top: clamp(-1.25rem, -1.5vw, -0.75rem); */
+  color: currentColor;
+}
+
+.progress-bars[hidden] {
+  display: none;
+}
+
+.progress-bar {
+  height: 3px;
+  background: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.progress-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: currentColor;
+  transition: width 240ms var(--ease);
 }
 
 .quote-block {
@@ -298,8 +312,10 @@ button {
 
 .gear-button {
   position: absolute;
-  right: 24px;
-  bottom: 24px;
+  right: 46px;
+  /* Align the gear's vertical centre with the MODE switcher row on the left.
+     Switcher centre ≈ 48px + ~half its height; the 40px gear matches at 40px. */
+  bottom: 40px;
   display: grid;
   place-items: center;
   width: 40px;
@@ -682,5 +698,10 @@ button {
     max-width: calc(100vw - 112px);
     flex-wrap: wrap;
     gap: 5px;
+  }
+
+  .gear-button {
+    right: 20px;
+    bottom: 20px;
   }
 }

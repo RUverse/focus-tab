@@ -25,6 +25,7 @@ const blockCancel = document.getElementById("blockCancel");
 const blockSection = document.getElementById("blockSection");
 const blockLock = document.getElementById("blockLock");
 const clockFormatButtons = Array.from(document.querySelectorAll("[data-hour24]"));
+const progressButtons = Array.from(document.querySelectorAll("[data-progress]"));
 const clockColorInput = document.getElementById("clockColorInput");
 const clockColorReset = document.getElementById("clockColorReset");
 
@@ -66,6 +67,10 @@ blockCancel.addEventListener("click", () => closeModal(blockModal));
 
 clockFormatButtons.forEach((button) => {
   button.addEventListener("click", () => saveSettings({ hour24: button.dataset.hour24 === "true" }));
+});
+
+progressButtons.forEach((button) => {
+  button.addEventListener("click", () => saveSettings({ showProgressBars: button.dataset.progress === "true" }));
 });
 
 clockColorInput.addEventListener("input", () => saveSettings({ clockColor: clockColorInput.value }));
@@ -140,6 +145,12 @@ function renderSettingsModal() {
 
   clockFormatButtons.forEach((button) => {
     const isActive = (button.dataset.hour24 === "true") === settings.hour24;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  progressButtons.forEach((button) => {
+    const isActive = (button.dataset.progress === "true") === settings.showProgressBars;
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
