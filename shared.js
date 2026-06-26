@@ -1,10 +1,16 @@
 export const MODES = ["dark", "light"];
 
+export const DISTRACTION_MIN_MINUTES = 1;
+export const DISTRACTION_MAX_MINUTES = 240;
+
 export const DEFAULT_SETTINGS = Object.freeze({
   mode: "dark",
   name: "Friend",
   hour24: false,
-  showSeconds: true
+  showSeconds: true,
+  blockList: [],
+  focusActive: false,
+  distractionUntil: 0
 });
 
 export const QUOTES = Object.freeze([
@@ -98,7 +104,57 @@ export function normalizeSettings(settings = {}) {
   normalized.hour24 = Boolean(normalized.hour24);
   normalized.showSeconds = Boolean(normalized.showSeconds);
 
+  const hosts = Array.isArray(normalized.blockList) ? normalized.blockList : [];
+  normalized.blockList = [...new Set(hosts.map(normalizeHost).filter(Boolean))];
+
+  normalized.focusActive = Boolean(normalized.focusActive);
+
+  const until = Number(normalized.distractionUntil);
+  normalized.distractionUntil = Number.isFinite(until) && until > 0 ? until : 0;
+
   return normalized;
+}
+
+// Turn loose user input ("X.com", "https://www.x.com/path") into a bare,
+// lowercased registrable host ("x.com") suitable for declarativeNetRequest
+// requestDomains (which also matches subdomains).
+export function normalizeHost(input) {
+  if (typeof input !== "string") {
+    return "";
+  }
+
+  let host = input.trim().toLowerCase();
+  if (!host) {
+    return "";
+  }
+
+  try {
+    host = new URL(/^[a-z][a-z0-9+.-]*:\/\//.test(host) ? host : `http://${host}`).hostname;
+  } catch {
+    host = host.replace(/^[a-z]+:\/\//, "").split("/")[0];
+  }
+
+  host = host.replace(/^www\./, "").split(":")[0];
+
+  return host.includes(".") ? host : "";
+}
+
+// Derive the active focus phase from settings + current time.
+export function getFocusState(settings, now = Date.now()) {
+  if (!settings || !settings.focusActive) {
+    return "idle";
+  }
+
+  if (settings.distractionUntil && settings.distractionUntil > now) {
+    return "distracted";
+  }
+
+  return "focused";
+}
+
+// Blocking is enforced only while focused and not on a break.
+export function isBlockingActive(settings, now = Date.now()) {
+  return getFocusState(settings, now) === "focused" && settings.blockList.length > 0;
 }
 
 export async function loadSettings() {

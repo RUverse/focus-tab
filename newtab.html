@@ -7,6 +7,7 @@
     <link rel="icon" href="icons/icon32.png">
     <link rel="stylesheet" href="newtab.css">
     <script type="module" src="newtab.js"></script>
+    <script type="module" src="focus.js"></script>
   </head>
   <body>
     <main class="newtab mode-dark" id="newtab" aria-live="polite">
@@ -29,6 +30,22 @@
           <blockquote id="quoteText">If you wait until you feel like doing something, you will likely never accomplish it.</blockquote>
           <figcaption id="quoteAuthor">John C. Maxwell</figcaption>
         </figure>
+
+        <div class="focus" id="focus" data-state="idle">
+          <button type="button" class="focus-start" id="focusStart">Focus</button>
+
+          <div class="focus-focused">
+            <p class="focus-status">Focused.</p>
+            <button type="button" class="distraction-open" id="distractionOpen">
+              I'm done being productive now I can have a bit of distractions
+            </button>
+          </div>
+
+          <div class="focus-distracted" role="status">
+            <p class="distracted-label">DISTRACTED</p>
+            <p class="distracted-sub">Distraction ends in <span id="distractionRemaining">a moment</span>.</p>
+          </div>
+        </div>
       </section>
 
       <div class="mode-switcher" role="group" aria-label="Mode">
@@ -36,6 +53,57 @@
         <button type="button" class="mode-button" data-mode="dark">DARK</button>
         <button type="button" class="mode-button" data-mode="light">LIGHT</button>
       </div>
+
+      <button type="button" class="gear-button" id="gearButton" aria-label="Edit block list" title="Edit block list">
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+          <path fill="currentColor" d="M19.14 12.94a7.6 7.6 0 0 0 .05-.94 7.6 7.6 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.62l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54a7.2 7.2 0 0 0-1.62.94l-2.39-.96a.5.5 0 0 0-.6.22L2.78 8.86a.5.5 0 0 0 .12.62l2.03 1.58a7.6 7.6 0 0 0 0 1.88L2.9 14.52a.5.5 0 0 0-.12.62l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.38 1.04.7 1.62.94l.36 2.54a.5.5 0 0 0 .5.42h3.84a.5.5 0 0 0 .5-.42l.36-2.54c.58-.24 1.12-.56 1.62-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.62l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/>
+        </svg>
+      </button>
     </main>
+
+    <div class="modal-backdrop" id="blockModal" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="blockModalTitle">
+        <h2 class="modal-title" id="blockModalTitle">Block list</h2>
+        <p class="modal-sub">Sites you add here can't be opened while you're focused.</p>
+
+        <form class="block-add" id="blockForm">
+          <input id="blockInput" type="text" placeholder="x.com" autocomplete="off" spellcheck="false" aria-label="Website to block">
+          <button type="submit">Add</button>
+        </form>
+
+        <ul class="block-list" id="blockListEl" aria-label="Blocked sites"></ul>
+        <p class="block-empty" id="blockEmpty">No sites yet. Add one above to get started.</p>
+
+        <div class="modal-actions">
+          <button type="button" class="link-button danger" id="endFocus" hidden>End focus</button>
+          <span class="spacer"></span>
+          <button type="button" class="ghost" id="blockCancel">Cancel</button>
+          <button type="button" class="primary" id="blockPrimary">Start focus</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="distractionModal" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="distractionModalTitle">
+        <h2 class="modal-title" id="distractionModalTitle">Take a break</h2>
+        <p class="modal-sub">Drag the handle to choose how long, then start the break.</p>
+
+        <div class="dial" id="dial">
+          <svg viewBox="0 0 240 240" aria-hidden="true" focusable="false">
+            <circle class="dial-track" cx="120" cy="120" r="96"></circle>
+            <circle class="dial-progress" id="dialProgress" cx="120" cy="120" r="96" transform="rotate(-90 120 120)"></circle>
+            <circle class="dial-handle" id="dialHandle" cx="120" cy="24" r="13"></circle>
+          </svg>
+          <div class="dial-readout" id="dialReadout">10 min</div>
+        </div>
+        <input class="dial-slider" id="dialSlider" type="range" min="1" max="240" value="10" aria-label="Break length in minutes">
+
+        <div class="modal-actions">
+          <span class="spacer"></span>
+          <button type="button" class="ghost" id="distractionCancel">Cancel</button>
+          <button type="button" class="primary" id="distractionConfirm">Start break</button>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
