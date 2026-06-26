@@ -63,19 +63,36 @@
 
     <div class="modal-backdrop" id="blockModal" hidden>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="blockModalTitle">
-        <h2 class="modal-title" id="blockModalTitle">Block list</h2>
-        <p class="modal-sub">Sites you add here can't be opened while you're focused.</p>
+        <h2 class="modal-title" id="blockModalTitle">Settings</h2>
 
-        <form class="block-add" id="blockForm">
-          <input id="blockInput" type="text" placeholder="x.com" autocomplete="off" spellcheck="false" aria-label="Website to block">
-          <button type="submit">Add</button>
-        </form>
+        <section class="settings-section">
+          <h3 class="settings-heading">General</h3>
+          <div class="setting-row">
+            <span class="setting-label">Clock format</span>
+            <div class="segmented" role="group" aria-label="Clock format">
+              <button type="button" class="seg-button" data-hour24="false">12h</button>
+              <button type="button" class="seg-button" data-hour24="true">24h</button>
+            </div>
+          </div>
+        </section>
 
-        <ul class="block-list" id="blockListEl" aria-label="Blocked sites"></ul>
-        <p class="block-empty" id="blockEmpty">No sites yet. Add one above to get started.</p>
+        <section class="settings-section" id="blockSection">
+          <div class="settings-heading-row">
+            <h3 class="settings-heading">Block list</h3>
+            <span class="settings-lock" id="blockLock" hidden>Locked while focused</span>
+          </div>
+          <p class="modal-sub">Sites you add here can't be opened while you're focused.</p>
+
+          <form class="block-add" id="blockForm">
+            <input id="blockInput" type="text" placeholder="x.com" autocomplete="off" spellcheck="false" aria-label="Website to block">
+            <button type="submit">Add</button>
+          </form>
+
+          <ul class="block-list" id="blockListEl" aria-label="Blocked sites"></ul>
+          <p class="block-empty" id="blockEmpty">No sites yet. Add one above to get started.</p>
+        </section>
 
         <div class="modal-actions">
-          <button type="button" class="link-button danger" id="endFocus" hidden>End focus</button>
           <span class="spacer"></span>
           <button type="button" class="ghost" id="blockCancel">Cancel</button>
           <button type="button" class="primary" id="blockPrimary">Start focus</button>
@@ -96,12 +113,13 @@
           </svg>
           <div class="dial-readout" id="dialReadout">10 min</div>
         </div>
-        <input class="dial-slider" id="dialSlider" type="range" min="1" max="240" value="10" aria-label="Break length in minutes">
+
+        <input class="reason-input" id="reasonInput" type="text" placeholder="enter your reason" autocomplete="off" spellcheck="false" aria-label="Reason for the break">
 
         <div class="modal-actions">
           <span class="spacer"></span>
           <button type="button" class="ghost" id="distractionCancel">Cancel</button>
-          <button type="button" class="primary" id="distractionConfirm">Start break</button>
+          <button type="button" class="primary" id="distractionConfirm" disabled>Start break</button>
         </div>
       </div>
     </div>

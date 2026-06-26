@@ -21,20 +21,23 @@ const blockListEl = document.getElementById("blockListEl");
 const blockEmpty = document.getElementById("blockEmpty");
 const blockPrimary = document.getElementById("blockPrimary");
 const blockCancel = document.getElementById("blockCancel");
-const endFocusBtn = document.getElementById("endFocus");
+const blockSection = document.getElementById("blockSection");
+const blockLock = document.getElementById("blockLock");
+const clockFormatButtons = Array.from(document.querySelectorAll("[data-hour24]"));
 
 const distractionModal = document.getElementById("distractionModal");
 const dial = document.getElementById("dial");
 const dialProgress = document.getElementById("dialProgress");
 const dialHandle = document.getElementById("dialHandle");
 const dialReadout = document.getElementById("dialReadout");
-const dialSlider = document.getElementById("dialSlider");
+const reasonInput = document.getElementById("reasonInput");
 const distractionCancel = document.getElementById("distractionCancel");
 const distractionConfirm = document.getElementById("distractionConfirm");
 
 const DIAL_CENTER = 120;
 const DIAL_RADIUS = 96;
 const DIAL_CIRCUMFERENCE = 2 * Math.PI * DIAL_RADIUS;
+const MIN_REASON_LENGTH = 10;
 
 let settings = await loadSettings();
 let selectedMinutes = 10;
@@ -45,7 +48,7 @@ onSettingsChanged((next) => {
   settings = next;
   render();
   if (!blockModal.hidden) {
-    renderBlockList();
+    renderSettingsModal();
   }
 });
 
@@ -57,11 +60,14 @@ blockForm.addEventListener("submit", onAddHost);
 blockListEl.addEventListener("click", onBlockListClick);
 blockPrimary.addEventListener("click", onBlockPrimary);
 blockCancel.addEventListener("click", () => closeModal(blockModal));
-endFocusBtn.addEventListener("click", onEndFocus);
+
+clockFormatButtons.forEach((button) => {
+  button.addEventListener("click", () => saveSettings({ hour24: button.dataset.hour24 === "true" }));
+});
 
 distractionCancel.addEventListener("click", () => closeModal(distractionModal));
 distractionConfirm.addEventListener("click", onConfirmDistraction);
-dialSlider.addEventListener("input", () => setMinutes(Number(dialSlider.value)));
+reasonInput.addEventListener("input", syncConfirmEnabled);
 dial.addEventListener("pointerdown", onDialPointerDown);
 
 document.addEventListener("keydown", (event) => {
@@ -113,16 +119,32 @@ async function onFocusStart() {
 // --- Block list editor ---------------------------------------------------
 
 function openBlockModal() {
-  renderBlockList();
+  renderSettingsModal();
   blockModal.hidden = false;
-  blockInput.focus();
+
+  if (getFocusState(settings) !== "focused") {
+    blockInput.focus();
+  }
 }
 
-function renderBlockList() {
+function renderSettingsModal() {
   const idle = getFocusState(settings) === "idle";
   blockPrimary.textContent = idle ? "Start focus" : "Done";
   blockPrimary.disabled = idle && settings.blockList.length === 0;
-  endFocusBtn.hidden = idle;
+
+  clockFormatButtons.forEach((button) => {
+    const isActive = (button.dataset.hour24 === "true") === settings.hour24;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  // The block list is locked while actively focused, so you can't edit your way
+  // out of the sites you committed to. On a break it's editable again.
+  const locked = getFocusState(settings) === "focused";
+  blockSection.classList.toggle("is-locked", locked);
+  blockLock.hidden = !locked;
+  blockInput.disabled = locked;
+  blockForm.querySelector("button[type=submit]").disabled = locked;
 
   blockListEl.replaceChildren();
   settings.blockList.forEach((host) => {
@@ -136,6 +158,7 @@ function renderBlockList() {
     remove.type = "button";
     remove.className = "block-remove";
     remove.dataset.host = host;
+    remove.disabled = locked;
     remove.setAttribute("aria-label", `Remove ${host}`);
     remove.textContent = "×";
 
@@ -176,19 +199,26 @@ async function onBlockPrimary() {
   closeModal(blockModal);
 }
 
-async function onEndFocus() {
-  await saveSettings({ focusActive: false, distractionUntil: 0 });
-  closeModal(blockModal);
-}
-
 // --- Distraction (break) picker -----------------------------------------
 
 function openDistractionModal() {
   setMinutes(selectedMinutes);
+  reasonInput.value = "";
+  syncConfirmEnabled();
   distractionModal.hidden = false;
+  reasonInput.focus();
+}
+
+// A break can only start once a reason of at least MIN_REASON_LENGTH is given.
+function syncConfirmEnabled() {
+  distractionConfirm.disabled = reasonInput.value.trim().length < MIN_REASON_LENGTH;
 }
 
 async function onConfirmDistraction() {
+  if (distractionConfirm.disabled) {
+    return;
+  }
+
   await saveSettings({ distractionUntil: Date.now() + selectedMinutes * 60000 });
   closeModal(distractionModal);
 }
@@ -223,7 +253,6 @@ function minutesFromPointer(event) {
 
 function setMinutes(minutes) {
   selectedMinutes = clampMinutes(minutes);
-  dialSlider.value = String(selectedMinutes);
   dialReadout.textContent = formatDuration(selectedMinutes);
 
   const fraction = selectedMinutes / DISTRACTION_MAX_MINUTES;

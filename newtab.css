@@ -120,7 +120,10 @@ button {
 }
 
 .time {
-  width: 100%;
+  /* Shrink-wrap to the digits so the flex container centers the whole line.
+     A fixed width here would left-anchor the line and let it overflow only to
+     the right (off-center) once the text is wider than the box — e.g. in 24h. */
+  max-width: none;
   font-size: clamp(5rem, 22vw, 17rem);
   font-weight: 900;
   line-height: 0.9;
@@ -348,6 +351,85 @@ button {
   opacity: 0.6;
 }
 
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.settings-heading {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.55;
+}
+
+.settings-lock {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--distract);
+}
+
+.settings-lock[hidden] {
+  display: none;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.setting-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.segmented {
+  display: flex;
+  border: 1px solid #333333;
+}
+
+.seg-button {
+  min-width: 48px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-right: 1px solid #333333;
+  color: #f1f1f1;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.seg-button:last-child {
+  border-right: 0;
+}
+
+.seg-button.is-active {
+  background: #f1f1f1;
+  color: #111111;
+}
+
+.settings-section.is-locked {
+  opacity: 0.5;
+}
+
+.settings-section.is-locked .block-add input,
+.settings-section.is-locked .block-add button,
+.settings-section.is-locked .block-remove {
+  cursor: not-allowed;
+}
+
 .block-add {
   display: flex;
   gap: 8px;
@@ -519,9 +601,19 @@ button {
   pointer-events: none;
 }
 
-.dial-slider {
+.reason-input {
   width: 100%;
-  accent-color: #f1f1f1;
+  min-height: 40px;
+  border: 1px solid #333333;
+  background: #1c1c1c;
+  color: #f1f1f1;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.reason-input::placeholder {
+  color: #8a8a8a;
 }
 
 @media (max-width: 820px) {
