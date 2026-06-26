@@ -1,0 +1,153 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f4f4f1;
+  --fg: #171717;
+  --muted: #6c6c66;
+  --line: #d8d8d1;
+  --active: #111111;
+  --active-fg: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 320px;
+  min-height: 330px;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.popup {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+}
+
+header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.logo-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  background: #111111;
+  color: #ffffff;
+  font-size: 0.6875rem;
+  font-weight: 900;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.section-label,
+.field span,
+.toggle span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--line);
+}
+
+.segmented button {
+  min-height: 38px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 800;
+}
+
+.segmented button:last-child {
+  border-right: 0;
+}
+
+.segmented button.is-active {
+  background: var(--active);
+  color: var(--active-fg);
+}
+
+.segmented button:focus-visible,
+input:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid #3d6dff;
+  outline-offset: 2px;
+}
+
+.field input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--fg);
+  padding: 8px 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 34px;
+}
+
+.toggle span {
+  margin: 0;
+}
+
+.toggle input {
+  width: 34px;
+  height: 20px;
+  accent-color: #111111;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #151515;
+    --fg: #f2f2f2;
+    --muted: #a8a8a0;
+    --line: #34342f;
+    --active: #f2f2f2;
+    --active-fg: #111111;
+  }
+
+  .field input {
+    background: #202020;
+  }
+
+  .logo-mark {
+    background: #f2f2f2;
+    color: #111111;
+  }
+}

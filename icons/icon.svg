@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="WHA clock icon">
+  <rect width="128" height="128" fill="#111111"/>
+  <circle cx="64" cy="64" r="38" fill="none" stroke="#f2f2f2" stroke-width="8"/>
+  <path d="M64 37v30l21 13" fill="none" stroke="#f2f2f2" stroke-width="8" stroke-linecap="square" stroke-linejoin="miter"/>
+  <path d="M30 101h68" fill="none" stroke="#f2f2f2" stroke-width="8" stroke-linecap="square"/>
+</svg>

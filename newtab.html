@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Focus Clock</title>
+    <link rel="icon" href="icons/icon32.png">
+    <link rel="stylesheet" href="newtab.css">
+    <script type="module" src="newtab.js"></script>
+  </head>
+  <body>
+    <main class="newtab mode-dark" id="newtab" aria-live="polite">
+      <nav class="top-links" aria-label="Work Hard Anywhere links">
+        <a href="https://workhardanywhere.com/" target="_blank" rel="noreferrer">THE CLUB</a>
+        <span>+</span>
+        <span>COPYRIGHT 2026 RUVERSE</span>
+      </nav>
+
+      <section class="clock-layout" aria-label="Clock and quote">
+        <div class="time-meta">
+          <span class="period" id="period">PM</span>
+          <span class="greeting" id="greeting">Afternoon, Friend</span>
+          <span class="date" id="date">10-4-2019</span>
+        </div>
+
+        <div class="time" id="time">4.19.18</div>
+
+        <figure class="quote-block">
+          <blockquote id="quoteText">If you wait until you feel like doing something, you will likely never accomplish it.</blockquote>
+          <figcaption id="quoteAuthor">John C. Maxwell</figcaption>
+        </figure>
+      </section>
+
+      <div class="mode-switcher" role="group" aria-label="Mode">
+        <span class="mode-label">MODE</span>
+        <button type="button" class="mode-button" data-mode="dark">DARK</button>
+        <button type="button" class="mode-button" data-mode="light">LIGHT</button>
+      </div>
+    </main>
+  </body>
+</html>
