@@ -195,6 +195,10 @@ function renderMode() {
   root.classList.remove(...MODES.map((mode) => `mode-${mode}`));
   root.classList.add(`mode-${settings.mode}`);
 
+  // Shape applies to the whole document (incl. modals, which live outside #newtab),
+  // so the round-corner styles hang off <body> rather than the page root.
+  document.body.classList.toggle("shape-round", settings.shape === "round");
+
   modeButtons.forEach((button) => {
     const isActive = button.dataset.mode === settings.mode;
     button.classList.toggle("is-active", isActive);

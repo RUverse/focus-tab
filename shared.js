@@ -1,5 +1,8 @@
 export const MODES = ["dark", "light"];
 
+// UI corner style: "boxy" (sharp corners) or "round" (border-radius everywhere).
+export const SHAPES = ["boxy", "round"];
+
 export const DISTRACTION_MIN_MINUTES = 1;
 export const DISTRACTION_MAX_MINUTES = 240;
 
@@ -8,6 +11,7 @@ export const DEFAULT_CLOCK_COLORS = Object.freeze({ dark: "#d7d7d7", light: "#25
 
 export const DEFAULT_SETTINGS = Object.freeze({
   mode: "dark",
+  shape: "boxy",
   name: "Friend",
   hour24: false,
   showSeconds: true,
@@ -107,6 +111,10 @@ export function normalizeSettings(settings = {}) {
 
   if (!MODES.includes(normalized.mode)) {
     normalized.mode = DEFAULT_SETTINGS.mode;
+  }
+
+  if (!SHAPES.includes(normalized.shape)) {
+    normalized.shape = DEFAULT_SETTINGS.shape;
   }
 
   normalized.name = String(normalized.name || DEFAULT_SETTINGS.name).trim() || DEFAULT_SETTINGS.name;

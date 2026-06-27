@@ -2,6 +2,10 @@
   color-scheme: dark light;
   --ease: cubic-bezier(0.2, 0, 0.2, 1);
   --font-main: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  /* Rounded counterpart to --font-main, used for the clock in "round" shape.
+     Arial Rounded MT Bold is a chunky, heavy rounded face installed on macOS;
+     ui-rounded (SF Pro Rounded) and the named fallbacks cover other systems. */
+  --font-round: "Arial Rounded MT Bold", ui-rounded, "SF Pro Rounded", "Hiragino Maru Gothic ProN", "Baloo 2", "Fredoka", "Varela Round", var(--font-main);
   --light-bg: #d8d8d8;
   --light-fg: #252525;
   --dark-bg: #000000;
@@ -533,6 +537,33 @@ button {
   display: none;
 }
 
+.undo-button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: -4px 0;
+  color: #b5b5b5;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.undo-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.undo-button:hover {
+  color: #ffffff;
+}
+
+.undo-button[hidden] {
+  display: none;
+}
+
 .setting-row {
   display: flex;
   align-items: center;
@@ -901,6 +932,52 @@ button {
 
 .reason-input::placeholder {
   color: #8a8a8a;
+}
+
+/* Round shape: border-radius on every UI element. Default is boxy (no radius),
+   so these only apply when the user opts into round corners in settings. */
+.shape-round .focus-start,
+.shape-round .distraction-open,
+.shape-round .mode-button,
+.shape-round .progress-bar,
+.shape-round .progress-fill {
+  border-radius: 999px;
+}
+
+.shape-round .gear-button {
+  border-radius: 50%;
+}
+
+/* Match the round shape with a rounded clock typeface. Weight is already 900
+   (the heaviest), so an extra stroke in the clock's own colour pushes it bolder. */
+.shape-round .time {
+  font-family: var(--font-round);
+  -webkit-text-stroke: 0.02em currentColor;
+}
+
+.shape-round .modal {
+  border-radius: 32px;
+}
+
+.shape-round .segmented {
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.shape-round .color-input,
+.shape-round .block-add input,
+.shape-round .block-add button,
+.shape-round .block-list li,
+.shape-round .modal-actions .primary,
+.shape-round .modal-actions .ghost,
+.shape-round .break-choice,
+.shape-round .reason-input {
+  border-radius: 20px;
+}
+
+.shape-round .block-remove,
+.shape-round .undo-button {
+  border-radius: 999px;
 }
 
 @media (max-width: 820px) {

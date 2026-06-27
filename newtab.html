@@ -90,6 +90,14 @@
         <section class="settings-section">
           <h3 class="settings-heading">General</h3>
           <div class="setting-row">
+            <span class="setting-label">Progress bars</span>
+            <div class="segmented" role="group" aria-label="Progress bars">
+              <button type="button" class="seg-button" data-progress="false">Off</button>
+              <button type="button" class="seg-button" data-progress="true">On</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
             <span class="setting-label">Clock format</span>
             <div class="segmented" role="group" aria-label="Clock format">
               <button type="button" class="seg-button" data-hour24="false">12h</button>
@@ -98,10 +106,10 @@
           </div>
 
           <div class="setting-row">
-            <span class="setting-label">Progress bars</span>
-            <div class="segmented" role="group" aria-label="Progress bars">
-              <button type="button" class="seg-button" data-progress="false">Off</button>
-              <button type="button" class="seg-button" data-progress="true">On</button>
+            <span class="setting-label">Shapes</span>
+            <div class="segmented" role="group" aria-label="Shapes">
+              <button type="button" class="seg-button" data-shape="boxy">Boxy</button>
+              <button type="button" class="seg-button" data-shape="round">Round</button>
             </div>
           </div>
 
@@ -118,6 +126,13 @@
           <div class="settings-heading-row">
             <h3 class="settings-heading">Block list</h3>
             <span class="settings-lock" id="blockLock" hidden>Locked while focused</span>
+            <button type="button" class="undo-button" id="blockUndo" hidden aria-label="Undo remove" title="Undo remove">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M9 7H15a4.5 4.5 0 0 1 0 9H8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M11.5 4 8 7l3.5 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>Undo</span>
+            </button>
           </div>
           <p class="modal-sub">Sites you add here can't be opened while you're focused.</p>
 
@@ -162,9 +177,8 @@
             <p class="afk-sub">Away from keyboard. Go move — your blocks stay on while you're gone.</p>
           </div>
           <div class="modal-actions">
-            <button type="button" class="ghost" id="afkBack">Back</button>
             <span class="spacer"></span>
-            <button type="button" class="primary" id="afkClose">Close</button>
+            <button type="button" class="primary" id="afkClose">Done</button>
           </div>
         </div>
 

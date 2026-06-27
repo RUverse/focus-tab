@@ -25,8 +25,10 @@ const blockPrimary = document.getElementById("blockPrimary");
 const blockCancel = document.getElementById("blockCancel");
 const blockSection = document.getElementById("blockSection");
 const blockLock = document.getElementById("blockLock");
+const blockUndo = document.getElementById("blockUndo");
 const clockFormatButtons = Array.from(document.querySelectorAll("[data-hour24]"));
 const progressButtons = Array.from(document.querySelectorAll("[data-progress]"));
+const shapeButtons = Array.from(document.querySelectorAll("[data-shape]"));
 const clockColorInput = document.getElementById("clockColorInput");
 const clockColorReset = document.getElementById("clockColorReset");
 
@@ -34,7 +36,6 @@ const distractionModal = document.getElementById("distractionModal");
 const distractionDialog = distractionModal.querySelector(".modal");
 const breakMove = document.getElementById("breakMove");
 const breakConsume = document.getElementById("breakConsume");
-const afkBack = document.getElementById("afkBack");
 const afkClose = document.getElementById("afkClose");
 const consumeBack = document.getElementById("consumeBack");
 const dial = document.getElementById("dial");
@@ -53,6 +54,8 @@ const MIN_REASON_LENGTH = 10;
 
 let settings = await loadSettings();
 let selectedMinutes = 10;
+// The most recently removed block-list entry, so it can be restored in one click.
+let lastRemoved = null;
 
 dialProgress.style.strokeDasharray = String(DIAL_CIRCUMFERENCE);
 
@@ -70,6 +73,7 @@ gearButton.addEventListener("click", () => openBlockModal());
 
 blockForm.addEventListener("submit", onAddHost);
 blockListEl.addEventListener("click", onBlockListClick);
+blockUndo.addEventListener("click", onUndoRemove);
 blockPrimary.addEventListener("click", onBlockPrimary);
 blockCancel.addEventListener("click", () => closeModal(blockModal));
 
@@ -81,13 +85,16 @@ progressButtons.forEach((button) => {
   button.addEventListener("click", () => saveSettings({ showProgressBars: button.dataset.progress === "true" }));
 });
 
+shapeButtons.forEach((button) => {
+  button.addEventListener("click", () => saveSettings({ shape: button.dataset.shape }));
+});
+
 clockColorInput.addEventListener("input", () => saveSettings({ clockColor: clockColorInput.value }));
 clockColorReset.addEventListener("click", () => saveSettings({ clockColor: "" }));
 
 distractionCancel.addEventListener("click", () => closeModal(distractionModal));
 breakMove.addEventListener("click", () => setBreakStep("afk"));
 breakConsume.addEventListener("click", () => setBreakStep("consume"));
-afkBack.addEventListener("click", () => setBreakStep("choice"));
 afkClose.addEventListener("click", () => closeModal(distractionModal));
 consumeBack.addEventListener("click", () => setBreakStep("choice"));
 distractionConfirm.addEventListener("click", onConfirmDistraction);
@@ -149,6 +156,7 @@ async function onFocusStart() {
 // --- Block list editor ---------------------------------------------------
 
 function openBlockModal() {
+  lastRemoved = null;
   renderSettingsModal();
   blockModal.hidden = false;
 
@@ -161,6 +169,10 @@ function renderSettingsModal() {
   const idle = getFocusState(settings) === "idle";
   blockPrimary.textContent = idle ? "Start focus" : "Done";
   blockPrimary.disabled = idle && settings.blockList.length === 0;
+  // When focused/on a break the primary button just closes the panel, so a
+  // separate Cancel would be redundant — settings save live either way. Only
+  // keep Cancel while idle, where it means "close without starting focus".
+  blockCancel.hidden = !idle;
 
   clockFormatButtons.forEach((button) => {
     const isActive = (button.dataset.hour24 === "true") === settings.hour24;
@@ -174,6 +186,12 @@ function renderSettingsModal() {
     button.setAttribute("aria-pressed", String(isActive));
   });
 
+  shapeButtons.forEach((button) => {
+    const isActive = button.dataset.shape === settings.shape;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
   // Show the picked colour, or the current theme default when none is set.
   clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[settings.mode] || DEFAULT_CLOCK_COLORS.dark;
   clockColorReset.hidden = !settings.clockColor;
@@ -183,6 +201,14 @@ function renderSettingsModal() {
   const locked = getFocusState(settings) === "focused";
   blockSection.classList.toggle("is-locked", locked);
   blockLock.hidden = !locked;
+
+  // Offer to undo the last removal, unless the list is locked or it's already back.
+  const canUndo = !locked && lastRemoved && !settings.blockList.includes(lastRemoved.host);
+  blockUndo.hidden = !canUndo;
+  if (canUndo) {
+    blockUndo.title = `Undo removing ${lastRemoved.host}`;
+    blockUndo.setAttribute("aria-label", `Undo removing ${lastRemoved.host}`);
+  }
   blockInput.disabled = locked;
   blockForm.querySelector("button[type=submit]").disabled = locked;
 
@@ -219,6 +245,7 @@ async function onAddHost(event) {
     return;
   }
 
+  lastRemoved = null;
   await saveSettings({ blockList: [...settings.blockList, host] });
 }
 
@@ -229,7 +256,22 @@ async function onBlockListClick(event) {
   }
 
   const host = button.dataset.host;
+  // Remember what we dropped (and where) so a single undo can put it back.
+  lastRemoved = { host, index: settings.blockList.indexOf(host) };
   await saveSettings({ blockList: settings.blockList.filter((item) => item !== host) });
+}
+
+async function onUndoRemove() {
+  if (!lastRemoved || settings.blockList.includes(lastRemoved.host)) {
+    lastRemoved = null;
+    renderSettingsModal();
+    return;
+  }
+
+  const next = [...settings.blockList];
+  next.splice(Math.min(lastRemoved.index, next.length), 0, lastRemoved.host);
+  lastRemoved = null;
+  await saveSettings({ blockList: next });
 }
 
 async function onBlockPrimary() {
