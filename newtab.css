@@ -77,6 +77,38 @@ button {
   text-decoration: none;
 }
 
+.for-later[hidden] {
+  display: none;
+}
+
+.for-later {
+  position: absolute;
+  top: 28px;
+  left: 38px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: min(420px, 40vw);
+  color: currentColor;
+}
+
+.for-later-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.4;
+}
+
+.for-later-title {
+  overflow: hidden;
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0.85;
+}
+
 .clock-layout {
   position: absolute;
   top: 50%;

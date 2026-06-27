@@ -69,8 +69,39 @@ onSettingsChanged((nextSettings) => {
   render();
 });
 
+renderForLater();
 render();
 window.setInterval(renderClock, 1000);
+
+// When this tab was parked here by the blocker, show what's waiting "for later".
+// The original page comes back on its own once a break starts or focus ends.
+function renderForLater() {
+  const forLater = document.getElementById("forLater");
+  const forLaterTitle = document.getElementById("forLaterTitle");
+  const params = new URLSearchParams(window.location.search);
+
+  const from = params.get("from");
+  if (params.get("blocked") !== "1" || !from) {
+    return;
+  }
+
+  const label = params.get("title") || hostFromUrl(from) || from;
+  forLaterTitle.textContent = label;
+  forLaterTitle.title = from;
+  forLater.hidden = false;
+
+  // Reflect the parked page in the tab title so blocked tabs are distinguishable
+  // in the tab strip instead of all reading "Focus Clock".
+  document.title = label;
+}
+
+function hostFromUrl(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
 
 function render() {
   renderMode();

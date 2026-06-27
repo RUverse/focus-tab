@@ -5,8 +5,14 @@ const FOCUS_PAGE = chrome.runtime.getURL("newtab.html");
 
 // The focus page a blocked tab is sent to, carrying the original URL so the tab
 // can be returned to it once blocking lifts (break started, or focus ended).
-function blockedUrlFor(originalUrl) {
-  return `${FOCUS_PAGE}?blocked=1&from=${encodeURIComponent(originalUrl)}`;
+// The page title rides along too, so the focus page can show what's parked
+// "for later" — falling back to the URL's host when no title is known yet.
+function blockedUrlFor(originalUrl, title) {
+  let url = `${FOCUS_PAGE}?blocked=1&from=${encodeURIComponent(originalUrl)}`;
+  if (title) {
+    url += `&title=${encodeURIComponent(title)}`;
+  }
+  return url;
 }
 
 let reconciling = false;
@@ -53,7 +59,7 @@ async function reconcile() {
 async function sweepOpenTabs(settings, now) {
   const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
   for (const tab of tabs) {
-    blockTab(tab.id, tab.url, settings, now);
+    blockTab(tab.id, tab.url, settings, now, tab.title);
   }
 }
 
@@ -82,13 +88,13 @@ async function syncAlarm(settings, now) {
 }
 
 // Send a single tab to the focus page if it points at a blocked site.
-function blockTab(tabId, url, settings, now) {
+function blockTab(tabId, url, settings, now, title) {
   if (typeof tabId !== "number" || !isBlockingActive(settings, now)) {
     return;
   }
 
   if (hostIsBlocked(url, settings.blockList)) {
-    chrome.tabs.update(tabId, { url: blockedUrlFor(url) }).catch(() => {});
+    chrome.tabs.update(tabId, { url: blockedUrlFor(url, title) }).catch(() => {});
   }
 }
 
@@ -124,18 +130,18 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
 chrome.tabs.onActivated.addListener(async ({ tabId }) => {
   const [settings, tab] = await Promise.all([loadSettings(), chrome.tabs.get(tabId).catch(() => null)]);
   if (tab) {
-    blockTab(tabId, tab.url || tab.pendingUrl, settings, Date.now());
+    blockTab(tabId, tab.url || tab.pendingUrl, settings, Date.now(), tab.title);
   }
 });
 
 // Catch in-tab URL changes (SPA-style or omnibox edits that reuse the tab).
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo) => {
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (!changeInfo.url) {
     return;
   }
 
   const settings = await loadSettings();
-  blockTab(tabId, changeInfo.url, settings, Date.now());
+  blockTab(tabId, changeInfo.url, settings, Date.now(), tab && tab.title);
 });
 
 chrome.runtime.onInstalled.addListener(reconcile);
