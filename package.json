@@ -1,0 +1,12 @@
+{
+  "name": "new-tab-focus",
+  "version": "1.1.1",
+  "private": true,
+  "description": "Build tooling for the New Tab Focus Clock browser extension.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "build:chrome": "node build.mjs chrome",
+    "build:firefox": "node build.mjs firefox"
+  }
+}
