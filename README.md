@@ -62,3 +62,36 @@ into pages and broad host access.
 4. Select this folder.
 
 The extension will replace Chrome's new tab page after it is loaded.
+
+## Building from source (Chrome & Firefox)
+
+The published packages are produced from the source in this repository by
+`build.mjs`. No source files are minified, transpiled, or concatenated; the
+script copies the JS/CSS/HTML verbatim and only generates `manifest.json` for
+each target (the Firefox build swaps the background to module scripts and adds
+the `browser_specific_settings.gecko` block).
+
+### Build environment
+
+- **OS:** any (macOS, Linux, or Windows) — the script uses only the Node
+  standard library and the system `zip` command.
+- **Node.js:** 18 or newer (developed and tested on Node 22.23.0).
+- **npm:** any version bundled with the above Node (used only to run the
+  scripts; there are no third-party dependencies to install).
+- **`zip`:** the Info-ZIP `zip` CLI, used to package the output. Present by
+  default on macOS and most Linux distros.
+
+### Steps
+
+```sh
+# 1. From the repository root, build both targets:
+npm run build            # or: node build.mjs
+
+# Build a single target instead:
+npm run build:firefox    # or: node build.mjs firefox
+npm run build:chrome     # or: node build.mjs chrome
+```
+
+This writes the unpacked extension to `dist/<target>/` and a store-ready
+archive to `dist/<target>.zip`. `dist/firefox.zip` is the file uploaded to
+AMO; `dist/firefox/` contains the exact, human-readable files it holds.
