@@ -57,9 +57,14 @@ async function reconcile() {
 // When focus turns on (or a break ends) redirect any matching tabs that are
 // already open — including background tabs that never fire a fresh navigation.
 async function sweepOpenTabs(settings, now) {
-  const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
+  // Query every tab and match URLs in JS rather than via a query `url` filter,
+  // which would require broad host permissions. The `tabs` permission already
+  // grants access to each tab's `url`, and blockTab ignores non-http(s) URLs.
+  const tabs = await chrome.tabs.query({});
   for (const tab of tabs) {
-    blockTab(tab.id, tab.url, settings, now, tab.title);
+    if (tab.url) {
+      blockTab(tab.id, tab.url, settings, now, tab.title);
+    }
   }
 }
 
