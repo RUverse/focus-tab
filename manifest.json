@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "New Tab Focus Clock",
-  "short_name": "Focus Tab",
+  "short_name": "Focus Clock",
   "description": "Motivation with each new tab: a minimal clock, quote, and focus-mode new tab page.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "minimum_chrome_version": "102",
   "offline_enabled": true,
   "chrome_url_overrides": {

@@ -116,6 +116,10 @@ button {
   line-height: 0.9;
   text-align: center;
   white-space: nowrap;
+  /* Fixed-width digits so the line keeps the same width as the seconds tick,
+     which stops the whole clock from shifting every second. */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 .time-dot {
@@ -267,11 +271,12 @@ button {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  padding-top: 18px;
 }
 
 .focus-status {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.6rem;
   font-weight: 800;
 }
 

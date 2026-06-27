@@ -1,6 +1,6 @@
 # New tab for the focused
 
-inspired by WHA Quotes & Clock New Tab Clone
+inspired by WHA Quotes & Clock New Tab Clone (not maintained anymore)
 
 A dependency-free Chrome extension inspired by the old WHA Quotes & Clock New Tab extension.
 
@@ -11,9 +11,7 @@ A dependency-free Chrome extension inspired by the old WHA Quotes & Clock New Ta
 - Live local clock with optional seconds and 24-hour format
 - Greeting and date
 - Rotating motivational quotes
-- **Focus mode**: a Focus button below the quote. Build a block list of sites
-  (e.g. `x.com`); while focused those sites can't be opened and are redirected
-  to this page instead.
+- **Focus mode**: a Focus button below the quote. Build a block list of sites. while focused those sites can't be opened and are redirected to this page instead.
 - **Distraction breaks**: from the focused view, open the break picker and drag
   the dial to set 1 minute – 4 hours. During a break the blocked sites open
   normally and the new tab shows a `DISTRACTED` indicator counting down.
