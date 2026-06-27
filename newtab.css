@@ -109,6 +109,96 @@ button {
   opacity: 0.85;
 }
 
+.now-playing[hidden] {
+  display: none;
+}
+
+.now-playing {
+  position: absolute;
+  top: 58px;
+  right: 38px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: min(300px, 42vw);
+  color: currentColor;
+  text-align: right;
+}
+
+.now-playing-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.4;
+}
+
+.now-playing-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.now-playing-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.np-open {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.np-open:hover,
+.np-open:focus-visible {
+  opacity: 1;
+}
+
+.np-icon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 3px;
+}
+
+.np-title {
+  overflow: hidden;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.np-mute {
+  flex: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.5625rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+
+.np-mute:hover,
+.np-mute:focus-visible {
+  opacity: 1;
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+}
+
 .clock-layout {
   position: absolute;
   top: 50%;

@@ -103,6 +103,89 @@ function hostFromUrl(url) {
   }
 }
 
+// --- Now playing (media in other tabs) ----------------------------------
+// Uses only the `tabs` permission: the `audible` flag plus each tab's title,
+// favicon, and mute state. No host access or content scripts — so we can show
+// and mute/focus playing tabs, but not read media metadata or pause playback.
+const nowPlaying = document.getElementById("nowPlaying");
+const nowPlayingList = document.getElementById("nowPlayingList");
+const hasTabsApi = typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.query;
+
+if (hasTabsApi) {
+  refreshNowPlaying();
+
+  // Re-render when audio starts/stops, mute toggles, a title/icon changes, or
+  // a playing tab is closed.
+  chrome.tabs.onUpdated.addListener((_tabId, info) => {
+    if (info.audible !== undefined || info.mutedInfo || info.title || info.favIconUrl) {
+      refreshNowPlaying();
+    }
+  });
+  chrome.tabs.onRemoved.addListener(refreshNowPlaying);
+}
+
+async function refreshNowPlaying() {
+  let tabs = [];
+  try {
+    tabs = await chrome.tabs.query({ audible: true });
+  } catch {
+    tabs = [];
+  }
+
+  nowPlayingList.replaceChildren(...tabs.map(buildNowPlayingItem));
+  nowPlaying.hidden = tabs.length === 0;
+}
+
+function buildNowPlayingItem(tab) {
+  const li = document.createElement("li");
+  li.className = "now-playing-item";
+
+  // Title + favicon: clicking switches to that tab.
+  const open = document.createElement("button");
+  open.type = "button";
+  open.className = "np-open";
+  open.title = tab.title || tab.url || "";
+  open.addEventListener("click", () => focusTab(tab));
+
+  const icon = document.createElement("img");
+  icon.className = "np-icon";
+  icon.alt = "";
+  if (tab.favIconUrl) {
+    icon.src = tab.favIconUrl;
+  } else {
+    icon.style.visibility = "hidden";
+  }
+  icon.addEventListener("error", () => {
+    icon.style.visibility = "hidden";
+  });
+
+  const title = document.createElement("span");
+  title.className = "np-title";
+  title.textContent = tab.title || hostFromUrl(tab.url) || "Untitled";
+
+  open.append(icon, title);
+
+  const muted = Boolean(tab.mutedInfo && tab.mutedInfo.muted);
+  const mute = document.createElement("button");
+  mute.type = "button";
+  mute.className = "np-mute";
+  mute.textContent = muted ? "Unmute" : "Mute";
+  mute.setAttribute("aria-pressed", String(muted));
+  mute.addEventListener("click", () => {
+    chrome.tabs.update(tab.id, { muted: !muted });
+  });
+
+  li.append(open, mute);
+  return li;
+}
+
+function focusTab(tab) {
+  chrome.tabs.update(tab.id, { active: true });
+  if (typeof tab.windowId === "number" && chrome.windows) {
+    chrome.windows.update(tab.windowId, { focused: true });
+  }
+}
+
 function render() {
   renderMode();
   renderClock();

@@ -39,7 +39,10 @@ The permissions the extension requests are used solely to provide its features:
 - **storage** — save your settings locally (above).
 - **alarms** — re‑enable blocking automatically when a timed break ends.
 - **tabs** — read tab URLs to compare against your block list and redirect or
-  restore blocked tabs.
+  restore blocked tabs, and read the title, icon, and audio state of tabs that
+  are currently playing sound to show them in the "Now playing" panel (which
+  also lets you mute or switch to those tabs). This is read and displayed only
+  on your device.
 - **webNavigation** — detect navigation to a blocked site so it can be
   redirected before the page loads.
 
