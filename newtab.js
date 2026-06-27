@@ -222,8 +222,20 @@ function renderClock() {
   const seconds = pad(now.getSeconds());
 
   const parts = settings.showSeconds ? [displayHour, minutes, seconds] : [displayHour, minutes];
-  // Wrap each separator so it can be nudged to the vertical centre of the digits.
-  timeNode.innerHTML = parts.join('<span class="time-dot">.</span>');
+  // Build the digits and separators as DOM nodes rather than an innerHTML
+  // string: the values are clock numbers (never user input), but assigning
+  // dynamic innerHTML trips AMO review and is needless here. Each separator is
+  // its own span so it can be nudged to the vertical centre of the digits.
+  timeNode.replaceChildren();
+  parts.forEach((part, index) => {
+    if (index > 0) {
+      const dot = document.createElement("span");
+      dot.className = "time-dot";
+      dot.textContent = ".";
+      timeNode.appendChild(dot);
+    }
+    timeNode.appendChild(document.createTextNode(String(part)));
+  });
 
   greetingNode.textContent = `${getGreeting(rawHour)}, ${settings.name}`;
   dateNode.textContent = `${now.getMonth() + 1}-${now.getDate()}-${now.getFullYear()}`;

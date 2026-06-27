@@ -36,10 +36,11 @@ const ASSETS = [
   "icons",
 ];
 
-// Minimum Firefox version: 128 is the current ESR and a safe floor for the
-// MV3 + module-background-scripts combo used here.
+// Minimum Firefox version: data_collection_permissions is only recognized from
+// Firefox 140 (desktop) / 142 (Android), so 142 is the floor that satisfies
+// both and keeps AMO validation warning-free.
 const GECKO_ID = "focus-clock@paydargraphics";
-const FIREFOX_MIN_VERSION = "128.0";
+const FIREFOX_MIN_VERSION = "142.0";
 
 function firefoxManifest(base) {
   const m = structuredClone(base);
@@ -50,8 +51,9 @@ function firefoxManifest(base) {
 
   // AMO requires a stable add-on id and benefits from a pinned floor version.
   // data_collection_permissions is mandatory for new submissions since
-  // 2025-11-03; "none" declares the add-on collects no user data, matching
-  // this extension's local-only storage behavior (see PRIVACY.md).
+  // 2025-11-03 (and recognized from Firefox 140+); "none" declares the add-on
+  // collects no user data, matching this extension's local-only storage
+  // behavior (see PRIVACY.md).
   m.browser_specific_settings = {
     gecko: {
       id: GECKO_ID,
