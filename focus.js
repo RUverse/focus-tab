@@ -36,6 +36,7 @@ const distractionModal = document.getElementById("distractionModal");
 const distractionDialog = distractionModal.querySelector(".modal");
 const breakMove = document.getElementById("breakMove");
 const breakConsume = document.getElementById("breakConsume");
+const breakChoices = breakMove.parentElement;
 const afkClose = document.getElementById("afkClose");
 const consumeBack = document.getElementById("consumeBack");
 const dial = document.getElementById("dial");
@@ -309,12 +310,21 @@ function setBreakStep(step) {
   distractionDialog.dataset.step = step;
 
   if (step === "choice") {
-    breakMove.focus();
+    randomizeBreakChoices();
+    breakChoices.firstElementChild.focus();
   } else if (step === "consume") {
     reasonInput.focus();
   } else if (step === "afk") {
     afkClose.focus();
   }
+}
+
+function randomizeBreakChoices() {
+  const choices = [breakMove, breakConsume];
+  if (Math.random() < 0.5) {
+    choices.reverse();
+  }
+  breakChoices.replaceChildren(...choices);
 }
 
 // A break can only start once a reason of at least MIN_REASON_LENGTH is given.
