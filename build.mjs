@@ -25,9 +25,11 @@ const distDir = path.join(root, "dist");
 // tooling are intentionally excluded.
 const ASSETS = [
   "background.js",
+  "fidget.js",
   "focus.js",
   "newtab.js",
   "popup.js",
+  "settings-panel.js",
   "shared.js",
   "newtab.html",
   "popup.html",

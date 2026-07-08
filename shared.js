@@ -3,6 +3,9 @@ export const MODES = ["dark", "light"];
 // UI corner style: "boxy" (sharp corners) or "round" (border-radius everywhere).
 export const SHAPES = ["boxy", "round"];
 
+// Fidget toy shown in the corner: "off" hides it, the rest pick a toy.
+export const FIDGETS = ["off", "spinner", "clicky", "breathe"];
+
 export const DISTRACTION_MIN_MINUTES = 1;
 export const DISTRACTION_MAX_MINUTES = 240;
 
@@ -17,10 +20,19 @@ export const DEFAULT_SETTINGS = Object.freeze({
   showSeconds: true,
   showProgressBars: false,
   clockColor: "",
+  fidget: "off",
+  // Where the user last dropped the fidget ({ x, y } in px from the top-left),
+  // or null for the default bottom-left spot.
+  fidgetPos: null,
   blockList: [],
   focusActive: false,
   distractionUntil: 0,
-  recentReasons: []
+  contentBreakDelayEnabled: true,
+  recentReasons: [],
+  contentBreaksToday: {
+    day: "",
+    count: 0
+  }
 });
 
 // How many past break reasons we keep around to show behind the picker.
@@ -126,6 +138,16 @@ export function normalizeSettings(settings = {}) {
   const color = String(normalized.clockColor || "").trim().toLowerCase();
   normalized.clockColor = /^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(color) ? color : "";
 
+  if (!FIDGETS.includes(normalized.fidget)) {
+    normalized.fidget = DEFAULT_SETTINGS.fidget;
+  }
+
+  const pos = normalized.fidgetPos;
+  normalized.fidgetPos =
+    pos && Number.isFinite(Number(pos.x)) && Number.isFinite(Number(pos.y))
+      ? { x: Number(pos.x), y: Number(pos.y) }
+      : null;
+
   const hosts = Array.isArray(normalized.blockList) ? normalized.blockList : [];
   normalized.blockList = [...new Set(hosts.map(normalizeHost).filter(Boolean))];
 
@@ -133,12 +155,21 @@ export function normalizeSettings(settings = {}) {
 
   const until = Number(normalized.distractionUntil);
   normalized.distractionUntil = Number.isFinite(until) && until > 0 ? until : 0;
+  normalized.contentBreakDelayEnabled = normalized.contentBreakDelayEnabled !== false;
 
   const reasons = Array.isArray(normalized.recentReasons) ? normalized.recentReasons : [];
   normalized.recentReasons = reasons
     .map((reason) => String(reason || "").trim())
     .filter(Boolean)
     .slice(0, MAX_RECENT_REASONS);
+
+  const contentBreaks = normalized.contentBreaksToday || {};
+  const contentBreakDay = String(contentBreaks.day || "");
+  const contentBreakCount = Number(contentBreaks.count);
+  normalized.contentBreaksToday = {
+    day: /^\d{4}-\d{2}-\d{2}$/.test(contentBreakDay) ? contentBreakDay : "",
+    count: Number.isFinite(contentBreakCount) && contentBreakCount > 0 ? Math.floor(contentBreakCount) : 0
+  };
 
   return normalized;
 }

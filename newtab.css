@@ -441,6 +441,109 @@ button {
   opacity: 0.8;
 }
 
+/* Fidget toy: minimal line art in the page's foreground colour (white in dark
+   mode). Defaults to the bottom-left corner above the MODE switcher; dragging
+   overrides left/top inline (the fixed height makes `top` win over `bottom`). */
+.fidget {
+  position: absolute;
+  bottom: 110px;
+  left: 46px;
+  z-index: 5;
+  width: 72px;
+  height: 72px;
+  color: currentColor;
+  cursor: grab;
+  opacity: 0.45;
+  touch-action: none;
+  user-select: none;
+  transition: opacity 160ms var(--ease);
+}
+
+.fidget[hidden] {
+  display: none;
+}
+
+.fidget:hover,
+.fidget.is-dragging,
+.fidget.is-scrubbing {
+  opacity: 0.95;
+}
+
+/* While a gesture is in flight the whole widget (hub included) shows a fist,
+   whether it's being carried or its rotor scrubbed. */
+.fidget.is-dragging,
+.fidget.is-dragging .fidget-spinner-hub,
+.fidget.is-scrubbing,
+.fidget.is-scrubbing .fidget-spinner-hub {
+  cursor: grabbing;
+}
+
+.fidget-svg {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+.fidget[data-type="spinner"] .fidget-spinner-svg,
+.fidget[data-type="clicky"] .fidget-clicky-svg,
+.fidget[data-type="breathe"] .fidget-breathe-svg {
+  display: block;
+}
+
+/* The spinner gets more presence than the other toys. */
+.fidget[data-type="spinner"] {
+  width: 112px;
+  height: 112px;
+}
+
+/* Only the hub spins on click, so it advertises itself as the button.
+   pointer-events: all makes the unfilled interior hoverable, not just the
+   stroke. */
+.fidget-spinner-hub {
+  pointer-events: all;
+  cursor: pointer;
+}
+
+.fidget-svg circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.fidget-clicky-button {
+  transform-origin: center;
+  transform-box: fill-box;
+  transition: transform 110ms var(--ease);
+}
+
+.fidget[data-type="clicky"].is-pressed .fidget-clicky-button {
+  transform: scale(0.82);
+}
+
+.fidget-clicky-count {
+  fill: currentColor;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.fidget-breathe-ring {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: fidget-breathe 8s ease-in-out infinite alternate;
+}
+
+@keyframes fidget-breathe {
+  from {
+    transform: scale(0.68);
+    opacity: 0.55;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .gear-button {
   position: absolute;
   right: 46px;
@@ -511,6 +614,34 @@ button {
   gap: 12px;
 }
 
+.settings-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  border: 1px solid #333333;
+}
+
+.settings-tab {
+  min-height: 36px;
+  border-right: 1px solid #333333;
+  color: #f1f1f1;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.settings-tab:last-child {
+  border-right: 0;
+}
+
+.settings-tab.is-active {
+  background: #f1f1f1;
+  color: #111111;
+}
+
+.settings-pane[hidden] {
+  display: none;
+}
+
 .settings-heading-row {
   display: flex;
   align-items: baseline;
@@ -573,6 +704,17 @@ button {
 
 .setting-label {
   font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.setting-input {
+  width: min(190px, 58%);
+  min-height: 32px;
+  border: 1px solid #333333;
+  background: #1c1c1c;
+  color: #f1f1f1;
+  padding: 6px 9px;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
@@ -934,6 +1076,19 @@ button {
   color: #8a8a8a;
 }
 
+.reason-feedback {
+  min-height: 1.2em;
+  margin: -6px 0 0;
+  color: var(--distract);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.reason-feedback[hidden] {
+  display: none;
+}
+
 /* Round shape: border-radius on every UI element. Default is boxy (no radius),
    so these only apply when the user opts into round corners in settings. */
 .shape-round .focus-start,
@@ -1007,5 +1162,10 @@ button {
   .gear-button {
     right: 20px;
     bottom: 20px;
+  }
+
+  .fidget {
+    bottom: 88px;
+    left: 20px;
   }
 }

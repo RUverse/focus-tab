@@ -2,13 +2,12 @@ import {
   loadSettings,
   onSettingsChanged,
   saveSettings,
-  normalizeHost,
   getFocusState,
   DISTRACTION_MIN_MINUTES,
   DISTRACTION_MAX_MINUTES,
-  DEFAULT_CLOCK_COLORS,
   MAX_RECENT_REASONS
 } from "./shared.js";
+import { createSettingsPanel } from "./settings-panel.js";
 
 const focusEl = document.getElementById("focus");
 const focusStartBtn = document.getElementById("focusStart");
@@ -17,20 +16,9 @@ const distractionRemainingEl = document.getElementById("distractionRemaining");
 const gearButton = document.getElementById("gearButton");
 
 const blockModal = document.getElementById("blockModal");
-const blockForm = document.getElementById("blockForm");
-const blockInput = document.getElementById("blockInput");
-const blockListEl = document.getElementById("blockListEl");
-const blockEmpty = document.getElementById("blockEmpty");
+const settingsPanelEl = document.getElementById("settingsPanel");
 const blockPrimary = document.getElementById("blockPrimary");
 const blockCancel = document.getElementById("blockCancel");
-const blockSection = document.getElementById("blockSection");
-const blockLock = document.getElementById("blockLock");
-const blockUndo = document.getElementById("blockUndo");
-const clockFormatButtons = Array.from(document.querySelectorAll("[data-hour24]"));
-const progressButtons = Array.from(document.querySelectorAll("[data-progress]"));
-const shapeButtons = Array.from(document.querySelectorAll("[data-shape]"));
-const clockColorInput = document.getElementById("clockColorInput");
-const clockColorReset = document.getElementById("clockColorReset");
 
 const distractionModal = document.getElementById("distractionModal");
 const distractionDialog = distractionModal.querySelector(".modal");
@@ -45,6 +33,7 @@ const dialHandle = document.getElementById("dialHandle");
 const dialReadout = document.getElementById("dialReadout");
 const reasonHistory = document.getElementById("reasonHistory");
 const reasonInput = document.getElementById("reasonInput");
+const reasonFeedback = document.getElementById("reasonFeedback");
 const distractionCancel = document.getElementById("distractionCancel");
 const distractionConfirm = document.getElementById("distractionConfirm");
 
@@ -52,11 +41,23 @@ const DIAL_CENTER = 120;
 const DIAL_RADIUS = 96;
 const DIAL_CIRCUMFERENCE = 2 * Math.PI * DIAL_RADIUS;
 const MIN_REASON_LENGTH = 10;
+const MIN_REASON_WORDS = 3;
+const BREAK_DELAY_SECONDS = [5, 15, 120, 300, 600];
 
 let settings = await loadSettings();
 let selectedMinutes = 10;
-// The most recently removed block-list entry, so it can be restored in one click.
-let lastRemoved = null;
+let consumeDelayStartedAt = 0;
+let consumeDelayTimer = null;
+
+const settingsPanel = createSettingsPanel(settingsPanelEl, {
+  getSettings: () => settings,
+  isBlockLocked: (current) => getFocusState(current) === "focused",
+  onAfterSave: (next) => {
+    settings = next;
+    render();
+    renderSettingsModal();
+  }
+});
 
 dialProgress.style.strokeDasharray = String(DIAL_CIRCUMFERENCE);
 
@@ -66,32 +67,17 @@ onSettingsChanged((next) => {
   if (!blockModal.hidden) {
     renderSettingsModal();
   }
+  if (!distractionModal.hidden) {
+    syncConfirmEnabled();
+  }
 });
 
 focusStartBtn.addEventListener("click", onFocusStart);
 distractionOpenBtn.addEventListener("click", () => openDistractionModal());
 gearButton.addEventListener("click", () => openBlockModal());
 
-blockForm.addEventListener("submit", onAddHost);
-blockListEl.addEventListener("click", onBlockListClick);
-blockUndo.addEventListener("click", onUndoRemove);
 blockPrimary.addEventListener("click", onBlockPrimary);
 blockCancel.addEventListener("click", () => closeModal(blockModal));
-
-clockFormatButtons.forEach((button) => {
-  button.addEventListener("click", () => saveSettings({ hour24: button.dataset.hour24 === "true" }));
-});
-
-progressButtons.forEach((button) => {
-  button.addEventListener("click", () => saveSettings({ showProgressBars: button.dataset.progress === "true" }));
-});
-
-shapeButtons.forEach((button) => {
-  button.addEventListener("click", () => saveSettings({ shape: button.dataset.shape }));
-});
-
-clockColorInput.addEventListener("input", () => saveSettings({ clockColor: clockColorInput.value }));
-clockColorReset.addEventListener("click", () => saveSettings({ clockColor: "" }));
 
 distractionCancel.addEventListener("click", () => closeModal(distractionModal));
 breakMove.addEventListener("click", () => setBreakStep("afk"));
@@ -147,7 +133,7 @@ async function onFocusStart() {
 
   // Idle: first run (no sites yet) opens the editor, otherwise start straight away.
   if (settings.blockList.length === 0) {
-    openBlockModal();
+    openBlockModal("block");
     return;
   }
 
@@ -156,14 +142,11 @@ async function onFocusStart() {
 
 // --- Block list editor ---------------------------------------------------
 
-function openBlockModal() {
-  lastRemoved = null;
+function openBlockModal(tab = "general") {
+  settingsPanel.setActiveTab(tab);
   renderSettingsModal();
   blockModal.hidden = false;
-
-  if (getFocusState(settings) !== "focused") {
-    blockInput.focus();
-  }
+  settingsPanel.focusCurrentTab();
 }
 
 function renderSettingsModal() {
@@ -174,105 +157,7 @@ function renderSettingsModal() {
   // separate Cancel would be redundant — settings save live either way. Only
   // keep Cancel while idle, where it means "close without starting focus".
   blockCancel.hidden = !idle;
-
-  clockFormatButtons.forEach((button) => {
-    const isActive = (button.dataset.hour24 === "true") === settings.hour24;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-  });
-
-  progressButtons.forEach((button) => {
-    const isActive = (button.dataset.progress === "true") === settings.showProgressBars;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-  });
-
-  shapeButtons.forEach((button) => {
-    const isActive = button.dataset.shape === settings.shape;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-  });
-
-  // Show the picked colour, or the current theme default when none is set.
-  clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[settings.mode] || DEFAULT_CLOCK_COLORS.dark;
-  clockColorReset.hidden = !settings.clockColor;
-
-  // The block list is locked while actively focused, so you can't edit your way
-  // out of the sites you committed to. On a break it's editable again.
-  const locked = getFocusState(settings) === "focused";
-  blockSection.classList.toggle("is-locked", locked);
-  blockLock.hidden = !locked;
-
-  // Offer to undo the last removal, unless the list is locked or it's already back.
-  const canUndo = !locked && lastRemoved && !settings.blockList.includes(lastRemoved.host);
-  blockUndo.hidden = !canUndo;
-  if (canUndo) {
-    blockUndo.title = `Undo removing ${lastRemoved.host}`;
-    blockUndo.setAttribute("aria-label", `Undo removing ${lastRemoved.host}`);
-  }
-  blockInput.disabled = locked;
-  blockForm.querySelector("button[type=submit]").disabled = locked;
-
-  blockListEl.replaceChildren();
-  settings.blockList.forEach((host) => {
-    const li = document.createElement("li");
-
-    const name = document.createElement("span");
-    name.className = "block-host";
-    name.textContent = host;
-
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "block-remove";
-    remove.dataset.host = host;
-    remove.disabled = locked;
-    remove.setAttribute("aria-label", `Remove ${host}`);
-    remove.textContent = "×";
-
-    li.append(name, remove);
-    blockListEl.append(li);
-  });
-
-  blockEmpty.hidden = settings.blockList.length > 0;
-}
-
-async function onAddHost(event) {
-  event.preventDefault();
-  const host = normalizeHost(blockInput.value);
-  blockInput.value = "";
-  blockInput.focus();
-
-  if (!host || settings.blockList.includes(host)) {
-    return;
-  }
-
-  lastRemoved = null;
-  await saveSettings({ blockList: [...settings.blockList, host] });
-}
-
-async function onBlockListClick(event) {
-  const button = event.target.closest(".block-remove");
-  if (!button) {
-    return;
-  }
-
-  const host = button.dataset.host;
-  // Remember what we dropped (and where) so a single undo can put it back.
-  lastRemoved = { host, index: settings.blockList.indexOf(host) };
-  await saveSettings({ blockList: settings.blockList.filter((item) => item !== host) });
-}
-
-async function onUndoRemove() {
-  if (!lastRemoved || settings.blockList.includes(lastRemoved.host)) {
-    lastRemoved = null;
-    renderSettingsModal();
-    return;
-  }
-
-  const next = [...settings.blockList];
-  next.splice(Math.min(lastRemoved.index, next.length), 0, lastRemoved.host);
-  lastRemoved = null;
-  await saveSettings({ blockList: next });
+  settingsPanel.render(settings);
 }
 
 async function onBlockPrimary() {
@@ -287,6 +172,8 @@ async function onBlockPrimary() {
 function openDistractionModal() {
   setMinutes(selectedMinutes);
   reasonInput.value = "";
+  consumeDelayStartedAt = 0;
+  stopConsumeDelayTimer();
   syncConfirmEnabled();
   renderReasonHistory();
   distractionModal.hidden = false;
@@ -310,11 +197,18 @@ function setBreakStep(step) {
   distractionDialog.dataset.step = step;
 
   if (step === "choice") {
+    consumeDelayStartedAt = 0;
+    stopConsumeDelayTimer();
+    syncConfirmEnabled();
     randomizeBreakChoices();
     breakChoices.firstElementChild.focus();
   } else if (step === "consume") {
+    startConsumeDelayTimer();
     reasonInput.focus();
   } else if (step === "afk") {
+    consumeDelayStartedAt = 0;
+    stopConsumeDelayTimer();
+    syncConfirmEnabled();
     afkClose.focus();
   }
 }
@@ -327,13 +221,35 @@ function randomizeBreakChoices() {
   breakChoices.replaceChildren(...choices);
 }
 
-// A break can only start once a reason of at least MIN_REASON_LENGTH is given.
+// A break can only start after a clear reason and today's delay have both passed.
 function syncConfirmEnabled() {
-  distractionConfirm.disabled = reasonInput.value.trim().length < MIN_REASON_LENGTH;
+  const validation = validateBreakReason(reasonInput.value);
+  const remainingSeconds = getConsumeDelayRemainingSeconds();
+  const waiting = remainingSeconds > 0;
+
+  if (!waiting) {
+    stopConsumeDelayTimer();
+  }
+
+  distractionConfirm.disabled = !validation.valid || waiting;
+  distractionConfirm.textContent = waiting ? `Wait ${formatDelay(remainingSeconds)}` : "Start break";
+
+  let message = "";
+  if (!validation.valid && reasonInput.value.trim()) {
+    message = validation.message;
+  } else if (waiting) {
+    const breakNumber = getContentBreakCount() + 1;
+    message = `Break ${breakNumber} today unlocks in ${formatDelay(remainingSeconds)}.`;
+  }
+
+  reasonFeedback.textContent = message;
+  reasonFeedback.hidden = !message;
 }
 
 async function onConfirmDistraction() {
-  if (distractionConfirm.disabled) {
+  const validation = validateBreakReason(reasonInput.value);
+  if (!validation.valid || getConsumeDelayRemainingSeconds() > 0) {
+    syncConfirmEnabled();
     return;
   }
 
@@ -341,9 +257,76 @@ async function onConfirmDistraction() {
   // Keep the newest first, drop any duplicate of this reason, and cap the list.
   const recentReasons = [reason, ...settings.recentReasons.filter((item) => item !== reason)]
     .slice(0, MAX_RECENT_REASONS);
+  const today = getTodayKey();
+  const contentBreaksToday = {
+    day: today,
+    count: getContentBreakCount(today) + 1
+  };
 
-  await saveSettings({ distractionUntil: Date.now() + selectedMinutes * 60000, recentReasons });
+  await saveSettings({
+    distractionUntil: Date.now() + selectedMinutes * 60000,
+    recentReasons,
+    contentBreaksToday
+  });
   closeModal(distractionModal);
+}
+
+function startConsumeDelayTimer() {
+  consumeDelayStartedAt = Date.now();
+  stopConsumeDelayTimer();
+  consumeDelayTimer = window.setInterval(syncConfirmEnabled, 250);
+  syncConfirmEnabled();
+}
+
+function stopConsumeDelayTimer() {
+  if (!consumeDelayTimer) {
+    return;
+  }
+
+  window.clearInterval(consumeDelayTimer);
+  consumeDelayTimer = null;
+}
+
+function validateBreakReason(value) {
+  const reason = value.trim();
+  const words = reason.match(/[a-z0-9]+(?:['-][a-z0-9]+)?/gi) || [];
+
+  if (reason.length < MIN_REASON_LENGTH) {
+    return { valid: false, message: "Write a clearer reason." };
+  }
+
+  if (words.length < MIN_REASON_WORDS) {
+    return { valid: false, message: "Use at least three words." };
+  }
+
+  if (looksLikeGibberish(reason)) {
+    return { valid: false, message: "Use real words, not random keystrokes." };
+  }
+
+  return { valid: true, message: "" };
+}
+
+function looksLikeGibberish(reason) {
+  const compact = reason.toLowerCase().replace(/[^a-z]/g, "");
+  if (compact.length < 8) {
+    return false;
+  }
+
+  if (/(.)\1{3,}/.test(compact)) {
+    return true;
+  }
+
+  if (/(asdf|fdsa|qwer|rewq|zxcv|vcxz|jkl|lkj)/.test(compact)) {
+    return true;
+  }
+
+  const vowels = compact.match(/[aeiou]/g) || [];
+  const vowelRatio = vowels.length / compact.length;
+  if (vowelRatio < 0.18 || vowelRatio > 0.72) {
+    return true;
+  }
+
+  return /[bcdfghjklmnpqrstvwxyz]{5,}/.test(compact);
 }
 
 function onDialPointerDown(event) {
@@ -394,6 +377,12 @@ function clampMinutes(minutes) {
 
 function closeModal(modal) {
   modal.hidden = true;
+  if (modal === distractionModal) {
+    consumeDelayStartedAt = 0;
+    stopConsumeDelayTimer();
+    distractionConfirm.textContent = "Start break";
+    reasonFeedback.hidden = true;
+  }
 }
 
 function formatDuration(minutes) {
@@ -409,4 +398,40 @@ function formatDuration(minutes) {
 function formatRemaining(ms) {
   const minutes = Math.max(1, Math.ceil(ms / 60000));
   return `${minutes} ${minutes === 1 ? "minute" : "minutes"}`;
+}
+
+function getConsumeDelayRemainingSeconds() {
+  if (!consumeDelayStartedAt || !settings.contentBreakDelayEnabled) {
+    return 0;
+  }
+
+  const delay = getBreakDelaySeconds(getContentBreakCount());
+  const elapsed = (Date.now() - consumeDelayStartedAt) / 1000;
+  return Math.max(0, Math.ceil(delay - elapsed));
+}
+
+function getBreakDelaySeconds(count) {
+  return BREAK_DELAY_SECONDS[Math.min(count, BREAK_DELAY_SECONDS.length - 1)];
+}
+
+function getContentBreakCount(day = getTodayKey()) {
+  const contentBreaks = settings.contentBreaksToday || {};
+  return contentBreaks.day === day ? contentBreaks.count : 0;
+}
+
+function getTodayKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDelay(seconds) {
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return rest ? `${minutes}m ${rest}s` : `${minutes}m`;
 }
