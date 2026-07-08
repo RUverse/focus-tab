@@ -485,8 +485,7 @@ button {
 }
 
 .fidget[data-type="spinner"] .fidget-spinner-svg,
-.fidget[data-type="clicky"] .fidget-clicky-svg,
-.fidget[data-type="breathe"] .fidget-breathe-svg {
+.fidget[data-type="clicky"] .fidget-clicky-svg {
   display: block;
 }
 
@@ -510,6 +509,16 @@ button {
   stroke-width: 2;
 }
 
+/* The frame tying the three arms to the hub. A hair thinner than the rings so
+   it reads as the spinner's body and lets the bearings stand out. Purely
+   decorative — hit-testing for the hub/rotor happens in JS. */
+.fidget-spinner-body {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
 .fidget-clicky-button {
   transform-origin: center;
   transform-box: fill-box;
@@ -524,24 +533,6 @@ button {
   fill: currentColor;
   font-size: 13px;
   font-weight: 800;
-}
-
-.fidget-breathe-ring {
-  transform-origin: center;
-  transform-box: fill-box;
-  animation: fidget-breathe 8s ease-in-out infinite alternate;
-}
-
-@keyframes fidget-breathe {
-  from {
-    transform: scale(0.68);
-    opacity: 0.55;
-  }
-
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 
 .gear-button {

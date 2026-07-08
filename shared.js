@@ -4,7 +4,7 @@ export const MODES = ["dark", "light"];
 export const SHAPES = ["boxy", "round"];
 
 // Fidget toy shown in the corner: "off" hides it, the rest pick a toy.
-export const FIDGETS = ["off", "spinner", "clicky", "breathe"];
+export const FIDGETS = ["off", "spinner", "clicky"];
 
 export const DISTRACTION_MIN_MINUTES = 1;
 export const DISTRACTION_MAX_MINUTES = 240;

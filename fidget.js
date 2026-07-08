@@ -178,7 +178,6 @@ function interact() {
     clicks += 1;
     clickyCount.textContent = String(clicks);
   }
-  // "breathe" is deliberately passive — it only wants your attention.
 }
 
 // Rotor gestures on the spinner's arms: press = brake (a tap sheds speed, a

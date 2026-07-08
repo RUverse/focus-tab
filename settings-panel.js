@@ -64,7 +64,6 @@ export function createSettingsPanel(root, options = {}) {
           <button type="button" class="seg-button" data-fidget="off">Off</button>
           <button type="button" class="seg-button" data-fidget="spinner">Spinner</button>
           <button type="button" class="seg-button" data-fidget="clicky">Clicky</button>
-          <button type="button" class="seg-button" data-fidget="breathe">Breathe</button>
         </div>
       </div>
 
