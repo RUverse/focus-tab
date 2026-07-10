@@ -28,6 +28,7 @@ const ASSETS = [
   "fidget.js",
   "focus.js",
   "newtab.js",
+  "sticky-note.js",
   "popup.js",
   "settings-panel.js",
   "shared.js",

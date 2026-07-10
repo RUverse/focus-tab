@@ -1,5 +1,6 @@
-import { loadSettings, onSettingsChanged, saveSettings } from "./shared.js";
+import { applyGadgetScaleStyles, loadSettings, onSettingsChanged, saveSettings } from "./shared.js";
 
+const root = document.getElementById("newtab");
 const fidgetEl = document.getElementById("fidget");
 const spinnerRotor = document.getElementById("fidgetSpinnerRotor");
 const clickyCount = document.getElementById("fidgetClickyCount");
@@ -49,11 +50,12 @@ onSettingsChanged((next) => {
 });
 
 // Re-clamp a stored position that no longer fits after the window shrinks.
-window.addEventListener("resize", applyPosition);
+window.addEventListener("resize", onViewportResize);
 
 fidgetEl.addEventListener("pointerdown", onPointerDown);
 
 function render() {
+  applyGadgetScaleStyles(root, settings.gadgetScale);
   fidgetEl.dataset.type = settings.fidget;
   fidgetEl.hidden = settings.fidget === "off";
 
@@ -66,6 +68,11 @@ function render() {
   if (!dragging) {
     applyPosition();
   }
+}
+
+function onViewportResize() {
+  applyGadgetScaleStyles(root, settings.gadgetScale);
+  applyPosition();
 }
 
 function applyPosition() {

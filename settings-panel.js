@@ -1,15 +1,45 @@
-import { DEFAULT_CLOCK_COLORS, getFocusState, normalizeHost, saveSettings } from "./shared.js";
+import {
+  DEFAULT_CLOCK_COLORS,
+  GADGET_SCALE_MAX,
+  GADGET_SCALE_MIN,
+  GADGET_SCALE_STEP,
+  getFocusState,
+  normalizeHost,
+  saveSettings
+} from "./shared.js";
 
 export function createSettingsPanel(root, options = {}) {
   let settings = options.getSettings();
   let activeTab = options.initialTab || "general";
   let lastRemoved = null;
+  let lockedRemoveHost = "";
   let nameSaveTimer = 0;
 
   root.innerHTML = `
     <div class="settings-tabs" role="tablist" aria-label="Settings sections">
-      <button type="button" class="settings-tab" data-settings-tab="general" role="tab">General</button>
-      <button type="button" class="settings-tab" data-settings-tab="block" role="tab">Block list</button>
+      <button type="button" class="settings-tab" data-settings-tab="general" role="tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>General</span>
+      </button>
+      <button type="button" class="settings-tab" data-settings-tab="block" role="tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M7 17 17 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span>Block list</span>
+      </button>
+      <button type="button" class="settings-tab" data-settings-tab="gadgets" role="tab">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <circle cx="12" cy="6.5" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle cx="16.8" cy="15" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle cx="7.2" cy="15" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="12" r="2.2" fill="currentColor"/>
+        </svg>
+        <span>Gadgets</span>
+      </button>
     </div>
 
     <section class="settings-section settings-pane" data-settings-panel="general" role="tabpanel">
@@ -59,35 +89,16 @@ export function createSettingsPanel(root, options = {}) {
       </div>
 
       <div class="setting-row">
-        <span class="setting-label">Fidget</span>
-        <div class="segmented" role="group" aria-label="Fidget">
-          <button type="button" class="seg-button" data-fidget="off">Off</button>
-          <button type="button" class="seg-button" data-fidget="spinner">Spinner</button>
-          <button type="button" class="seg-button" data-fidget="clicky">Clicky</button>
-        </div>
-      </div>
-
-      <div class="setting-row">
-        <span class="setting-label">Break delay</span>
-        <div class="segmented" role="group" aria-label="Break delay">
-          <button type="button" class="seg-button" data-break-delay="false">Off</button>
-          <button type="button" class="seg-button" data-break-delay="true">On</button>
-        </div>
-      </div>
-
-      <div class="setting-row">
-        <span class="setting-label">Clock color</span>
+        <span class="setting-label">Accent color</span>
         <div class="color-control">
           <button type="button" class="link-button" data-clock-color-reset hidden>Reset</button>
-          <input type="color" class="color-input" data-clock-color-input aria-label="Clock color">
+          <input type="color" class="color-input" data-clock-color-input aria-label="Accent color">
         </div>
       </div>
     </section>
 
     <section class="settings-section settings-pane" data-settings-panel="block" role="tabpanel">
       <div class="settings-heading-row">
-        <h3 class="settings-heading">Block list</h3>
-        <span class="settings-lock" data-block-lock hidden>Locked while focused</span>
         <button type="button" class="undo-button" data-block-undo hidden aria-label="Undo remove" title="Undo remove">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M9 7H15a4.5 4.5 0 0 1 0 9H8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -98,6 +109,14 @@ export function createSettingsPanel(root, options = {}) {
       </div>
       <p class="modal-sub">Sites you add here can't be opened while you're focused.</p>
 
+      <div class="setting-row">
+        <span class="setting-label">Break delay</span>
+        <div class="segmented" role="group" aria-label="Break delay">
+          <button type="button" class="seg-button" data-break-delay="false">Off</button>
+          <button type="button" class="seg-button" data-break-delay="true">On</button>
+        </div>
+      </div>
+
       <form class="block-add" data-block-form>
         <input data-block-input type="text" placeholder="x.com" autocomplete="off" spellcheck="false" aria-label="Website to block">
         <button type="submit">Add</button>
@@ -105,6 +124,41 @@ export function createSettingsPanel(root, options = {}) {
 
       <ul class="block-list" data-block-list aria-label="Blocked sites"></ul>
       <p class="block-empty" data-block-empty>No sites yet. Add one above to get started.</p>
+    </section>
+
+    <section class="settings-section settings-pane" data-settings-panel="gadgets" role="tabpanel">
+      <div class="setting-row">
+        <span class="setting-label">Motivational quote</span>
+        <div class="segmented" role="group" aria-label="Motivational quote">
+          <button type="button" class="seg-button" data-motivational-quote="false">Off</button>
+          <button type="button" class="seg-button" data-motivational-quote="true">On</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <span class="setting-label">Fidget</span>
+        <div class="segmented" role="group" aria-label="Fidget">
+          <button type="button" class="seg-button" data-fidget="off">Off</button>
+          <button type="button" class="seg-button" data-fidget="spinner">Spinner</button>
+          <button type="button" class="seg-button" data-fidget="clicky">Clicky</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <span class="setting-label">Sticky note list</span>
+        <div class="segmented" role="group" aria-label="Sticky note list">
+          <button type="button" class="seg-button" data-sticky-note-list="false">Off</button>
+          <button type="button" class="seg-button" data-sticky-note-list="true">On</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <span class="setting-label">Gadget scale</span>
+        <div class="range-control">
+          <input class="range-input" data-gadget-scale type="range" min="${GADGET_SCALE_MIN}" max="${GADGET_SCALE_MAX}" step="${GADGET_SCALE_STEP}" aria-label="Gadget scale">
+          <output class="range-value" data-gadget-scale-output>1x</output>
+        </div>
+      </div>
     </section>
   `;
 
@@ -117,8 +171,9 @@ export function createSettingsPanel(root, options = {}) {
   const blockInput = root.querySelector("[data-block-input]");
   const blockList = root.querySelector("[data-block-list]");
   const blockEmpty = root.querySelector("[data-block-empty]");
-  const blockLock = root.querySelector("[data-block-lock]");
   const blockUndo = root.querySelector("[data-block-undo]");
+  const gadgetScaleInput = root.querySelector("[data-gadget-scale]");
+  const gadgetScaleOutput = root.querySelector("[data-gadget-scale-output]");
 
   tabButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -152,6 +207,18 @@ export function createSettingsPanel(root, options = {}) {
     button.addEventListener("click", () => patchSettings({ fidget: button.dataset.fidget }));
   });
 
+  root.querySelectorAll("[data-sticky-note-list]").forEach((button) => {
+    button.addEventListener("click", () => patchSettings({ stickyNoteListEnabled: button.dataset.stickyNoteList === "true" }));
+  });
+
+  root.querySelectorAll("[data-motivational-quote]").forEach((button) => {
+    button.addEventListener("click", () => patchSettings({ motivationalQuoteEnabled: button.dataset.motivationalQuote === "true" }));
+  });
+
+  gadgetScaleInput.addEventListener("input", () => {
+    patchSettings({ gadgetScale: Number(gadgetScaleInput.value) });
+  });
+
   root.querySelectorAll("[data-break-delay]").forEach((button) => {
     button.addEventListener("click", () => patchSettings({ contentBreakDelayEnabled: button.dataset.breakDelay === "true" }));
   });
@@ -164,7 +231,8 @@ export function createSettingsPanel(root, options = {}) {
   nameInput.addEventListener("change", () => patchSettings({ name: nameInput.value }));
   nameInput.addEventListener("blur", () => patchSettings({ name: nameInput.value }));
 
-  clockColorInput.addEventListener("input", () => patchSettings({ clockColor: clockColorInput.value }));
+  clockColorInput.addEventListener("input", saveClockColor);
+  clockColorInput.addEventListener("change", saveClockColor);
   clockColorReset.addEventListener("click", () => patchSettings({ clockColor: "" }));
 
   blockForm.addEventListener("submit", async (event) => {
@@ -178,26 +246,35 @@ export function createSettingsPanel(root, options = {}) {
     }
 
     lastRemoved = null;
+    lockedRemoveHost = "";
     await patchSettings({ blockList: [...settings.blockList, host] });
   });
 
   blockList.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-block-remove]");
-    if (!button || getLocked()) {
+    if (!button) {
       return;
     }
 
     const host = button.dataset.host;
+    if (getLocked()) {
+      lockedRemoveHost = host;
+      renderBlockList();
+      return;
+    }
+
+    lockedRemoveHost = "";
     lastRemoved = { host, index: settings.blockList.indexOf(host) };
     await patchSettings({ blockList: settings.blockList.filter((item) => item !== host) });
   });
 
   blockUndo.addEventListener("click", async () => {
-    if (!lastRemoved || settings.blockList.includes(lastRemoved.host) || getLocked()) {
+    if (!lastRemoved || settings.blockList.includes(lastRemoved.host)) {
       return;
     }
 
     const next = [...settings.blockList];
+    lockedRemoveHost = "";
     next.splice(Math.max(0, lastRemoved.index), 0, lastRemoved.host);
     await patchSettings({ blockList: next });
   });
@@ -212,6 +289,8 @@ export function createSettingsPanel(root, options = {}) {
     setActive("[data-seconds]", (button) => (button.dataset.seconds === "true") === settings.showSeconds);
     setActive("[data-shape]", (button) => button.dataset.shape === settings.shape);
     setActive("[data-fidget]", (button) => button.dataset.fidget === settings.fidget);
+    setActive("[data-sticky-note-list]", (button) => (button.dataset.stickyNoteList === "true") === settings.stickyNoteListEnabled);
+    setActive("[data-motivational-quote]", (button) => (button.dataset.motivationalQuote === "true") === settings.motivationalQuoteEnabled);
     setActive("[data-break-delay]", (button) => (button.dataset.breakDelay === "true") === settings.contentBreakDelayEnabled);
 
     if (document.activeElement !== nameInput) {
@@ -220,6 +299,9 @@ export function createSettingsPanel(root, options = {}) {
 
     clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[settings.mode] || DEFAULT_CLOCK_COLORS.dark;
     clockColorReset.hidden = !settings.clockColor;
+    gadgetScaleInput.value = String(settings.gadgetScale);
+    gadgetScaleInput.setAttribute("aria-valuetext", formatScale(settings.gadgetScale));
+    gadgetScaleOutput.value = formatScale(settings.gadgetScale);
     renderBlockList();
   }
 
@@ -238,11 +320,11 @@ export function createSettingsPanel(root, options = {}) {
 
   function renderBlockList() {
     const locked = getLocked();
-    blockLock.hidden = !locked;
-    blockInput.disabled = locked;
-    blockForm.querySelector("button[type=submit]").disabled = locked;
+    if (!locked || !settings.blockList.includes(lockedRemoveHost)) {
+      lockedRemoveHost = "";
+    }
 
-    const canUndo = !locked && lastRemoved && !settings.blockList.includes(lastRemoved.host);
+    const canUndo = lastRemoved && !settings.blockList.includes(lastRemoved.host);
     blockUndo.hidden = !canUndo;
     if (canUndo) {
       blockUndo.title = `Undo removing ${lastRemoved.host}`;
@@ -250,23 +332,36 @@ export function createSettingsPanel(root, options = {}) {
     }
 
     blockList.replaceChildren();
-    settings.blockList.forEach((host) => {
+    settings.blockList.forEach((host, index) => {
       const li = document.createElement("li");
 
       const name = document.createElement("span");
       name.className = "block-host";
       name.textContent = host;
 
+      const actions = document.createElement("span");
+      actions.className = "block-actions";
+
+      const lock = document.createElement("span");
+      lock.className = "settings-lock block-lock-inline";
+      lock.id = `block-lock-${index}`;
+      lock.setAttribute("role", "status");
+      lock.textContent = "Locked while focused";
+      lock.hidden = lockedRemoveHost !== host;
+
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "block-remove";
       remove.dataset.blockRemove = "";
       remove.dataset.host = host;
-      remove.disabled = locked;
       remove.setAttribute("aria-label", `Remove ${host}`);
+      if (!lock.hidden) {
+        remove.setAttribute("aria-describedby", lock.id);
+      }
       remove.textContent = "×";
 
-      li.append(name, remove);
+      actions.append(lock, remove);
+      li.append(name, actions);
       blockList.append(li);
     });
 
@@ -289,18 +384,22 @@ export function createSettingsPanel(root, options = {}) {
     return settings;
   }
 
+  function saveClockColor() {
+    patchSettings({ clockColor: clockColorInput.value });
+  }
+
   function getLocked() {
     return options.isBlockLocked ? options.isBlockLocked(settings) : getFocusState(settings) === "focused";
   }
 
   function focusCurrentTab() {
     if (activeTab === "block") {
-      if (!getLocked()) {
-        blockInput.focus();
-        return;
-      }
+      blockInput.focus();
+      return;
+    }
 
-      root.querySelector('[data-settings-tab="block"]').focus();
+    if (activeTab === "gadgets") {
+      root.querySelector('[data-settings-panel="gadgets"] button')?.focus();
       return;
     }
 
@@ -315,4 +414,9 @@ export function createSettingsPanel(root, options = {}) {
       render();
     }
   };
+}
+
+function formatScale(value) {
+  const rounded = Math.round(Number(value) * 100) / 100;
+  return `${rounded.toFixed(2).replace(/\.?0+$/, "")}x`;
 }

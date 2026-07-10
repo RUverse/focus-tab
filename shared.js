@@ -8,6 +8,10 @@ export const FIDGETS = ["off", "spinner", "clicky"];
 
 export const DISTRACTION_MIN_MINUTES = 1;
 export const DISTRACTION_MAX_MINUTES = 240;
+export const STICKY_NOTE_MAX_CHARS = 2000;
+export const GADGET_SCALE_MIN = 1;
+export const GADGET_SCALE_MAX = 4;
+export const GADGET_SCALE_STEP = 0.01;
 
 // Per-mode clock colour used when the user hasn't picked a custom one.
 export const DEFAULT_CLOCK_COLORS = Object.freeze({ dark: "#d7d7d7", light: "#252525" });
@@ -24,6 +28,12 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // Where the user last dropped the fidget ({ x, y } in px from the top-left),
   // or null for the default bottom-left spot.
   fidgetPos: null,
+  stickyNoteListEnabled: false,
+  stickyNoteListText: "",
+  // Where the user last dropped the sticky note list, or null for its default spot.
+  stickyNoteListPos: null,
+  gadgetScale: 1,
+  motivationalQuoteEnabled: true,
   blockList: [],
   focusActive: false,
   distractionUntil: 0,
@@ -148,6 +158,23 @@ export function normalizeSettings(settings = {}) {
       ? { x: Number(pos.x), y: Number(pos.y) }
       : null;
 
+  normalized.stickyNoteListEnabled = Boolean(normalized.stickyNoteListEnabled);
+  normalized.stickyNoteListText = String(normalized.stickyNoteListText || "")
+    .replace(/\r\n?/g, "\n")
+    .slice(0, STICKY_NOTE_MAX_CHARS);
+  const stickyPos = normalized.stickyNoteListPos;
+  normalized.stickyNoteListPos =
+    stickyPos && Number.isFinite(Number(stickyPos.x)) && Number.isFinite(Number(stickyPos.y))
+      ? { x: Number(stickyPos.x), y: Number(stickyPos.y) }
+      : null;
+
+  const gadgetScale = Number(normalized.gadgetScale);
+  normalized.gadgetScale = Number.isFinite(gadgetScale)
+    ? normalizeGadgetScale(gadgetScale)
+    : DEFAULT_SETTINGS.gadgetScale;
+
+  normalized.motivationalQuoteEnabled = normalized.motivationalQuoteEnabled !== false;
+
   const hosts = Array.isArray(normalized.blockList) ? normalized.blockList : [];
   normalized.blockList = [...new Set(hosts.map(normalizeHost).filter(Boolean))];
 
@@ -172,6 +199,66 @@ export function normalizeSettings(settings = {}) {
   };
 
   return normalized;
+}
+
+export function normalizeGadgetScale(value) {
+  const scale = Number(value);
+  if (!Number.isFinite(scale)) {
+    return DEFAULT_SETTINGS.gadgetScale;
+  }
+
+  const clamped = Math.min(GADGET_SCALE_MAX, Math.max(GADGET_SCALE_MIN, scale));
+  return Number((Math.round(clamped / GADGET_SCALE_STEP) * GADGET_SCALE_STEP).toFixed(2));
+}
+
+export function applyGadgetScaleStyles(root, value) {
+  if (!root) {
+    return;
+  }
+
+  const scale = normalizeGadgetScale(value);
+  const compact = typeof window !== "undefined" && window.matchMedia("(max-width: 560px)").matches;
+  const stickyBase = compact
+    ? { width: 220, minHeight: 104, bottom: 216, left: 20, horizontalMargin: 40 }
+    : { width: 240, minHeight: 116, bottom: 240, left: 46, horizontalMargin: 92 };
+
+  const pixelVars = {
+    "--fidget-size": 72 * scale,
+    "--fidget-spinner-size": 112 * scale,
+    "--sticky-note-width": stickyBase.width * scale,
+    "--sticky-note-min-height": stickyBase.minHeight * scale,
+    "--sticky-note-content-min-height": 112 * scale,
+    "--sticky-note-bottom": stickyBase.bottom,
+    "--sticky-note-left": stickyBase.left,
+    "--sticky-note-horizontal-margin": stickyBase.horizontalMargin,
+    "--sticky-note-border-width": 2 * scale,
+    "--sticky-note-radius": 18 * scale,
+    "--sticky-note-handle-top": 7 * scale,
+    "--sticky-note-handle-width": 86 * scale,
+    "--sticky-note-handle-height": 18 * scale,
+    "--sticky-note-handle-bar-top": 7 * scale,
+    "--sticky-note-handle-bar-width": 80 * scale,
+    "--sticky-note-handle-bar-height": 3 * scale,
+    "--sticky-note-padding-top": 26 * scale,
+    "--sticky-note-padding-x": 12 * scale,
+    "--sticky-note-padding-bottom": 12 * scale
+  };
+
+  Object.entries(pixelVars).forEach(([name, number]) => {
+    root.style.setProperty(name, `${roundCssValue(number)}px`);
+  });
+
+  root.style.setProperty(
+    "--sticky-note-max-height",
+    compact
+      ? `${roundCssValue(28 * scale)}vh`
+      : `min(${roundCssValue(260 * scale)}px, ${roundCssValue(36 * scale)}vh)`
+  );
+  root.style.setProperty("--sticky-note-font-size", `${roundCssValue(0.88 * scale)}rem`);
+}
+
+function roundCssValue(value) {
+  return Math.round(value * 1000) / 1000;
 }
 
 // Turn loose user input ("X.com", "https://www.x.com/path") into a bare,
@@ -219,7 +306,7 @@ export function isBlockingActive(settings, now = Date.now()) {
 export async function loadSettings() {
   if (hasChromeStorage()) {
     return new Promise((resolve) => {
-      chrome.storage.local.get(DEFAULT_SETTINGS, (items) => resolve(normalizeSettings(items)));
+      chrome.storage.local.get(null, (items) => resolve(normalizeSettings(items || {})));
     });
   }
 

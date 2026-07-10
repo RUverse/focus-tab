@@ -58,17 +58,27 @@ h1 {
 
 .settings-tabs {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   border: 1px solid var(--line);
 }
 
 .settings-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-height: 36px;
   border-right: 1px solid var(--line);
   color: var(--fg);
   cursor: pointer;
   font-size: 0.78rem;
   font-weight: 850;
+}
+
+.settings-tab svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
 
 .settings-tab:last-child {
@@ -183,6 +193,28 @@ h1 {
   cursor: pointer;
 }
 
+.range-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 190px;
+}
+
+.range-input {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--active);
+  cursor: pointer;
+}
+
+.range-value {
+  min-width: 2.4em;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+  text-align: right;
+}
+
 .link-button,
 .undo-button {
   color: var(--muted);
@@ -265,6 +297,19 @@ h1 {
   font-size: 0.84rem;
   font-weight: 750;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.block-actions {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  gap: 8px;
+  margin-left: 10px;
+}
+
+.block-lock-inline {
   white-space: nowrap;
 }
 

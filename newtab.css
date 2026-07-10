@@ -49,6 +49,27 @@ button {
   width: 100vw;
   min-height: 100vh;
   overflow: hidden;
+  --fidget-size: 72px;
+  --fidget-spinner-size: 112px;
+  --sticky-note-width: 240px;
+  --sticky-note-min-height: 116px;
+  --sticky-note-content-min-height: 112px;
+  --sticky-note-max-height: min(260px, 36vh);
+  --sticky-note-bottom: 240px;
+  --sticky-note-left: 46px;
+  --sticky-note-horizontal-margin: 92px;
+  --sticky-note-border-width: 2px;
+  --sticky-note-radius: 18px;
+  --sticky-note-handle-top: 7px;
+  --sticky-note-handle-width: 86px;
+  --sticky-note-handle-height: 18px;
+  --sticky-note-handle-bar-top: 7px;
+  --sticky-note-handle-bar-width: 80px;
+  --sticky-note-handle-bar-height: 3px;
+  --sticky-note-padding-top: 26px;
+  --sticky-note-padding-x: 12px;
+  --sticky-note-padding-bottom: 12px;
+  --sticky-note-font-size: 0.88rem;
   transition: background-color 220ms var(--ease), color 220ms var(--ease);
 }
 
@@ -449,8 +470,8 @@ button {
   bottom: 110px;
   left: 46px;
   z-index: 5;
-  width: 72px;
-  height: 72px;
+  width: var(--fidget-size);
+  height: var(--fidget-size);
   color: currentColor;
   cursor: grab;
   opacity: 0.45;
@@ -491,8 +512,8 @@ button {
 
 /* The spinner gets more presence than the other toys. */
 .fidget[data-type="spinner"] {
-  width: 112px;
-  height: 112px;
+  width: var(--fidget-spinner-size);
+  height: var(--fidget-spinner-size);
 }
 
 /* Only the hub spins on click, so it advertises itself as the button.
@@ -509,13 +530,19 @@ button {
   stroke-width: 2;
 }
 
-/* The frame tying the three arms to the hub. A hair thinner than the rings so
-   it reads as the spinner's body and lets the bearings stand out. Purely
-   decorative — hit-testing for the hub/rotor happens in JS. */
+/* Inner race of each bearing: a thin concentric ring inside every lobe and the
+   hub, the way a real spinner's bearings read. */
+.fidget-svg .fidget-bearing-inner {
+  stroke-width: 1;
+}
+
+/* The frame tying the three arms to the hub, matched to the ring thickness so
+   the body reads as one solid piece with the bearings. Purely decorative —
+   hit-testing for the hub/rotor happens in JS. */
 .fidget-spinner-body {
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.5;
+  stroke-width: 2;
   pointer-events: none;
 }
 
@@ -533,6 +560,80 @@ button {
   fill: currentColor;
   font-size: 13px;
   font-weight: 800;
+}
+
+.sticky-note-list {
+  position: absolute;
+  bottom: var(--sticky-note-bottom);
+  left: var(--sticky-note-left);
+  z-index: 4;
+  width: min(var(--sticky-note-width), calc(100vw - var(--sticky-note-horizontal-margin)));
+  min-height: var(--sticky-note-min-height);
+  max-height: min(var(--sticky-note-max-height), calc(100vh - var(--sticky-note-bottom) - 16px));
+  display: flex;
+  overflow: hidden;
+  border: var(--sticky-note-border-width) solid currentColor;
+  border-radius: var(--sticky-note-radius);
+  background: transparent;
+  color: currentColor;
+  opacity: 0.45;
+  transition: opacity 160ms var(--ease);
+}
+
+.sticky-note-list[hidden] {
+  display: none;
+}
+
+.sticky-note-list:hover,
+.sticky-note-list:focus-within,
+.sticky-note-list.is-dragging {
+  opacity: 0.95;
+}
+
+.sticky-note-handle {
+  position: absolute;
+  top: var(--sticky-note-handle-top);
+  left: 50%;
+  width: var(--sticky-note-handle-width);
+  height: var(--sticky-note-handle-height);
+  padding: 0;
+  color: currentColor;
+  cursor: grab;
+  opacity: 0.85;
+  touch-action: none;
+  transform: translateX(-50%);
+}
+
+.sticky-note-handle::before {
+  content: "";
+  position: absolute;
+  top: var(--sticky-note-handle-bar-top);
+  left: 50%;
+  width: var(--sticky-note-handle-bar-width);
+  height: var(--sticky-note-handle-bar-height);
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.sticky-note-list.is-dragging,
+.sticky-note-list.is-dragging .sticky-note-handle {
+  cursor: grabbing;
+}
+
+.sticky-note-content {
+  flex: 1;
+  min-height: var(--sticky-note-content-min-height);
+  max-height: none;
+  overflow: auto;
+  padding: var(--sticky-note-padding-top) var(--sticky-note-padding-x) var(--sticky-note-padding-bottom);
+  caret-color: currentColor;
+  font-size: var(--sticky-note-font-size);
+  font-weight: 650;
+  line-height: 1.4;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .gear-button {
@@ -607,17 +708,27 @@ button {
 
 .settings-tabs {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   border: 1px solid #333333;
 }
 
 .settings-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-height: 36px;
   border-right: 1px solid #333333;
   color: #f1f1f1;
   cursor: pointer;
   font-size: 0.78rem;
   font-weight: 850;
+}
+
+.settings-tab svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
 
 .settings-tab:last-child {
@@ -631,6 +742,10 @@ button {
 
 .settings-pane[hidden] {
   display: none;
+}
+
+.settings-pane {
+  margin-top: 14px;
 }
 
 .settings-heading-row {
@@ -771,14 +886,26 @@ button {
   display: none;
 }
 
-.settings-section.is-locked {
-  opacity: 0.5;
+.range-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(190px, 58%);
 }
 
-.settings-section.is-locked .block-add input,
-.settings-section.is-locked .block-add button,
-.settings-section.is-locked .block-remove {
-  cursor: not-allowed;
+.range-input {
+  flex: 1;
+  min-width: 0;
+  accent-color: #f1f1f1;
+  cursor: pointer;
+}
+
+.range-value {
+  min-width: 2.4em;
+  color: #d7d7d7;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-align: right;
 }
 
 .block-add {
@@ -829,9 +956,22 @@ button {
 }
 
 .block-host {
+  min-width: 0;
   font-size: 0.9rem;
   font-weight: 700;
   word-break: break-all;
+}
+
+.block-actions {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 10px;
+}
+
+.block-lock-inline {
+  white-space: nowrap;
 }
 
 .block-remove {
@@ -1153,6 +1293,15 @@ button {
   .gear-button {
     right: 20px;
     bottom: 20px;
+  }
+
+  .newtab {
+    --sticky-note-width: 220px;
+    --sticky-note-min-height: 104px;
+    --sticky-note-max-height: 28vh;
+    --sticky-note-bottom: 216px;
+    --sticky-note-left: 20px;
+    --sticky-note-horizontal-margin: 40px;
   }
 
   .fidget {

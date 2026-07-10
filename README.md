@@ -9,8 +9,9 @@ A dependency-free Chrome extension inspired by the old WHA Quotes & Clock New Ta
 - Chrome new-tab override
 - Dark and Light modes
 - Live local clock with optional seconds and 24-hour format
-- Custom clock color, with a reset to the theme default
+- Custom accent color, with a reset to the theme default
 - Optional progress bars for the day, month, and year
+- Optional new-tab gadgets: motivational quotes, fidget toys, and a sticky note list
 - Greeting and date
 - Rotating motivational quotes
 - **Focus mode**: a Focus button below the quote. Build a block list of sites. while focused those sites can't be opened and are redirected to this page instead.

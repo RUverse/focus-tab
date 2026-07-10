@@ -18,8 +18,9 @@ The extension saves your settings locally using the browser's
 - The list of websites you choose to block during a focus session
 - Your focus / break state and the current break timer
 - Recent break reasons you've entered
-- New‑tab display preferences (clock format, theme, custom clock color,
-  progress bars, and your display name)
+- Sticky note list content, if you enable that gadget
+- New‑tab display preferences (clock format, theme, custom accent color,
+  gadget visibility, progress bars, and your display name)
 
 This information never leaves your device. It is not sent to the developer or
 to any third party.

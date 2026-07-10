@@ -1,6 +1,7 @@
 import {
   MODES,
   QUOTES,
+  applyGadgetScaleStyles,
   loadSettings,
   onSettingsChanged,
   pickRandom,
@@ -11,6 +12,7 @@ const root = document.getElementById("newtab");
 const timeNode = document.getElementById("time");
 const greetingNode = document.getElementById("greeting");
 const dateNode = document.getElementById("date");
+const quoteBlockNode = document.getElementById("quoteBlock");
 const quoteTextNode = document.getElementById("quoteText");
 const quoteAuthorNode = document.getElementById("quoteAuthor");
 const modeButtons = Array.from(document.querySelectorAll("[data-mode]"));
@@ -41,7 +43,10 @@ modeButtons.forEach((button) => {
 
 document.addEventListener("keydown", async (event) => {
   const target = event.target;
-  const isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
+  const isTyping =
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    (target instanceof HTMLElement && target.isContentEditable);
 
   if (isTyping || event.metaKey || event.ctrlKey || event.altKey) {
     return;
@@ -194,6 +199,7 @@ function render() {
 function renderMode() {
   root.classList.remove(...MODES.map((mode) => `mode-${mode}`));
   root.classList.add(`mode-${settings.mode}`);
+  applyGadgetScaleStyles(root, settings.gadgetScale);
 
   // Shape applies to the whole document (incl. modals, which live outside #newtab),
   // so the round-corner styles hang off <body> rather than the page root.
@@ -211,6 +217,7 @@ function renderMode() {
   // Progress bars track the clock colour so they read as part of the clock.
   progressBarsNode.hidden = !settings.showProgressBars;
   progressBarsNode.style.color = settings.clockColor || "";
+  quoteBlockNode.hidden = !settings.motivationalQuoteEnabled;
   renderProgress();
 }
 
