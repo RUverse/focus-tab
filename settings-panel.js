@@ -4,6 +4,7 @@ import {
   GADGET_SCALE_MIN,
   GADGET_SCALE_STEP,
   getFocusState,
+  getSystemColorScheme,
   normalizeHost,
   saveSettings
 } from "./shared.js";
@@ -46,14 +47,6 @@ export function createSettingsPanel(root, options = {}) {
       <div class="setting-row">
         <span class="setting-label">Name</span>
         <input class="setting-input" data-name-input type="text" maxlength="28" autocomplete="off" spellcheck="false" aria-label="Name">
-      </div>
-
-      <div class="setting-row">
-        <span class="setting-label">Theme</span>
-        <div class="segmented" role="group" aria-label="Theme">
-          <button type="button" class="seg-button" data-mode="dark">Dark</button>
-          <button type="button" class="seg-button" data-mode="light">Light</button>
-        </div>
       </div>
 
       <div class="setting-row">
@@ -174,6 +167,13 @@ export function createSettingsPanel(root, options = {}) {
   const blockUndo = root.querySelector("[data-block-undo]");
   const gadgetScaleInput = root.querySelector("[data-gadget-scale]");
   const gadgetScaleOutput = root.querySelector("[data-gadget-scale-output]");
+  const colorSchemeQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
+
+  colorSchemeQuery?.addEventListener("change", () => {
+    if (!settings.clockColor) {
+      clockColorInput.value = DEFAULT_CLOCK_COLORS[getSystemColorScheme()];
+    }
+  });
 
   tabButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -181,10 +181,6 @@ export function createSettingsPanel(root, options = {}) {
       render();
       focusCurrentTab();
     });
-  });
-
-  root.querySelectorAll("[data-mode]").forEach((button) => {
-    button.addEventListener("click", () => patchSettings({ mode: button.dataset.mode }));
   });
 
   root.querySelectorAll("[data-progress]").forEach((button) => {
@@ -283,7 +279,6 @@ export function createSettingsPanel(root, options = {}) {
     settings = nextSettings;
 
     renderTabs();
-    setActive("[data-mode]", (button) => button.dataset.mode === settings.mode);
     setActive("[data-progress]", (button) => (button.dataset.progress === "true") === settings.showProgressBars);
     setActive("[data-hour24]", (button) => (button.dataset.hour24 === "true") === settings.hour24);
     setActive("[data-seconds]", (button) => (button.dataset.seconds === "true") === settings.showSeconds);
@@ -297,7 +292,7 @@ export function createSettingsPanel(root, options = {}) {
       nameInput.value = settings.name;
     }
 
-    clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[settings.mode] || DEFAULT_CLOCK_COLORS.dark;
+    clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[getSystemColorScheme()];
     clockColorReset.hidden = !settings.clockColor;
     gadgetScaleInput.value = String(settings.gadgetScale);
     gadgetScaleInput.setAttribute("aria-valuetext", formatScale(settings.gadgetScale));

@@ -1,4 +1,4 @@
-import { MODES, loadSettings, onSettingsChanged } from "./shared.js";
+import { loadSettings, onSettingsChanged } from "./shared.js";
 import { createSettingsPanel } from "./settings-panel.js";
 
 const settingsPanelEl = document.getElementById("settingsPanel");
@@ -22,5 +22,4 @@ render();
 
 function render() {
   settingsPanel.render(settings);
-  document.body.dataset.mode = MODES.includes(settings.mode) ? settings.mode : "dark";
 }

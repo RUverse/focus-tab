@@ -7,7 +7,7 @@ A dependency-free Chrome extension inspired by the old WHA Quotes & Clock New Ta
 ## Features
 
 - Chrome new-tab override
-- Dark and Light modes
+- Automatic light and dark modes that follow the operating system
 - Live local clock with optional seconds and 24-hour format
 - Custom accent color, with a reset to the theme default
 - Optional progress bars for the day, month, and year

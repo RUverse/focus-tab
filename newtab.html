@@ -13,7 +13,7 @@
     <script type="module" src="sticky-note.js"></script>
   </head>
   <body>
-    <main class="newtab mode-dark" id="newtab" aria-live="polite">
+    <main class="newtab" id="newtab" aria-live="polite">
       <nav class="top-links" aria-label="Work Hard Anywhere links">
         <a href="https://gitlab.com/alirezaekt/focus-tab" target="_blank" rel="noreferrer">Repository</a>
         <span>+</span>
@@ -98,12 +98,6 @@
       <div class="sticky-note-list" id="stickyNoteList" hidden>
         <button type="button" class="sticky-note-handle" id="stickyNoteHandle" aria-label="Move sticky note list" title="Move sticky note list"></button>
         <div class="sticky-note-content" id="stickyNoteContent" role="textbox" aria-label="Sticky note list" aria-multiline="true" contenteditable="plaintext-only" spellcheck="false"></div>
-      </div>
-
-      <div class="mode-switcher" role="group" aria-label="Mode">
-        <span class="mode-label">MODE</span>
-        <button type="button" class="mode-button" data-mode="dark">DARK</button>
-        <button type="button" class="mode-button" data-mode="light">LIGHT</button>
       </div>
 
       <button type="button" class="gear-button" id="gearButton" aria-label="Edit block list" title="Edit block list">

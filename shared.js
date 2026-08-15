@@ -1,5 +1,3 @@
-export const MODES = ["dark", "light"];
-
 // UI corner style: "boxy" (sharp corners) or "round" (border-radius everywhere).
 export const SHAPES = ["boxy", "round"];
 
@@ -13,11 +11,10 @@ export const GADGET_SCALE_MIN = 1;
 export const GADGET_SCALE_MAX = 4;
 export const GADGET_SCALE_STEP = 0.01;
 
-// Per-mode clock colour used when the user hasn't picked a custom one.
+// Per-system-theme clock colour used when the user hasn't picked a custom one.
 export const DEFAULT_CLOCK_COLORS = Object.freeze({ dark: "#d7d7d7", light: "#252525" });
 
 export const DEFAULT_SETTINGS = Object.freeze({
-  mode: "dark",
   shape: "boxy",
   name: "Friend",
   hour24: false,
@@ -131,9 +128,9 @@ export function normalizeSettings(settings = {}) {
     ...settings
   };
 
-  if (!MODES.includes(normalized.mode)) {
-    normalized.mode = DEFAULT_SETTINGS.mode;
-  }
+  // Theme used to be a saved preference. Ignore that legacy value now that the
+  // interface follows the operating system's colour scheme.
+  delete normalized.mode;
 
   if (!SHAPES.includes(normalized.shape)) {
     normalized.shape = DEFAULT_SETTINGS.shape;
@@ -209,6 +206,14 @@ export function normalizeGadgetScale(value) {
 
   const clamped = Math.min(GADGET_SCALE_MAX, Math.max(GADGET_SCALE_MIN, scale));
   return Number((Math.round(clamped / GADGET_SCALE_STEP) * GADGET_SCALE_STEP).toFixed(2));
+}
+
+export function getSystemColorScheme() {
+  return typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
 }
 
 export function applyGadgetScaleStyles(root, value) {
