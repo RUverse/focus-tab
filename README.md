@@ -2,12 +2,13 @@
 
 inspired by WHA Quotes & Clock New Tab Clone (not maintained anymore)
 
-A dependency-free Chrome extension inspired by the old WHA Quotes & Clock New Tab extension.
+A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab extension. Its packaged runtime is dependency-free; development uses esbuild and the local `@ruverse/waves` package to bundle animated backgrounds.
 
 ## Features
 
 - Chrome new-tab override
 - Automatic light and dark modes that follow the operating system
+- Four deterministic animated wave backgrounds with Off, Random, and pinned-preset choices
 - Live local clock with optional seconds and 24-hour format
 - Custom accent color, with a reset to the theme default
 - Optional progress bars for the day, month, and year
@@ -57,10 +58,11 @@ into pages and broad host access.
 
 ## Install locally
 
-1. Open `chrome://extensions`.
-2. Enable Developer mode.
-3. Choose Load unpacked.
-4. Select this folder.
+1. Run `npm install` and `npm run build:chrome`.
+2. Open `chrome://extensions`.
+3. Enable Developer mode.
+4. Choose Load unpacked.
+5. Select `dist/chrome`.
 
 The extension will replace Chrome's new tab page after it is loaded.
 
@@ -77,15 +79,19 @@ the `browser_specific_settings.gecko` block).
 - **OS:** any (macOS, Linux, or Windows) — the script uses only the Node
   standard library and the system `zip` command.
 - **Node.js:** 18 or newer (developed and tested on Node 22.23.0).
-- **npm:** any version bundled with the above Node (used only to run the
-  scripts; there are no third-party dependencies to install).
+- **npm:** any version bundled with the above Node. During sibling development,
+  `@ruverse/waves` resolves from `../ruwaves`; after its first publication,
+  replace the `file:` dependency with `^0.1.0`.
 - **`zip`:** the Info-ZIP `zip` CLI, used to package the output. Present by
   default on macOS and most Linux distros.
 
 ### Steps
 
 ```sh
-# 1. From the repository root, build both targets:
+# 1. Install the build dependency and local wave package:
+npm install
+
+# 2. From the repository root, build both targets:
 npm run build            # or: node build.mjs
 
 # Build a single target instead:

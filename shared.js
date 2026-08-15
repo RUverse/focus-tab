@@ -4,6 +4,15 @@ export const SHAPES = ["boxy", "round"];
 // Fidget toy shown in the corner: "off" hides it, the rest pick a toy.
 export const FIDGETS = ["off", "spinner", "clicky"];
 
+export const WAVE_BACKGROUNDS = [
+  "off",
+  "random",
+  "quiet-current",
+  "soft-arc",
+  "diagonal-drift",
+  "signal-bloom"
+];
+
 export const DISTRACTION_MIN_MINUTES = 1;
 export const DISTRACTION_MAX_MINUTES = 240;
 export const STICKY_NOTE_MAX_CHARS = 2000;
@@ -31,6 +40,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   stickyNoteListPos: null,
   gadgetScale: 1,
   motivationalQuoteEnabled: true,
+  waveBackground: "quiet-current",
   blockList: [],
   focusActive: false,
   distractionUntil: 0,
@@ -171,6 +181,10 @@ export function normalizeSettings(settings = {}) {
     : DEFAULT_SETTINGS.gadgetScale;
 
   normalized.motivationalQuoteEnabled = normalized.motivationalQuoteEnabled !== false;
+
+  if (!WAVE_BACKGROUNDS.includes(normalized.waveBackground)) {
+    normalized.waveBackground = DEFAULT_SETTINGS.waveBackground;
+  }
 
   const hosts = Array.isArray(normalized.blockList) ? normalized.blockList : [];
   normalized.blockList = [...new Set(hosts.map(normalizeHost).filter(Boolean))];

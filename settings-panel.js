@@ -3,6 +3,7 @@ import {
   GADGET_SCALE_MAX,
   GADGET_SCALE_MIN,
   GADGET_SCALE_STEP,
+  WAVE_BACKGROUNDS,
   getFocusState,
   getSystemColorScheme,
   normalizeHost,
@@ -88,6 +89,18 @@ export function createSettingsPanel(root, options = {}) {
           <input type="color" class="color-input" data-clock-color-input aria-label="Accent color">
         </div>
       </div>
+
+      <div class="setting-row">
+        <label class="setting-label" for="waveBackgroundSelect">Background waves</label>
+        <select class="setting-input" id="waveBackgroundSelect" data-wave-background>
+          <option value="off">Off</option>
+          <option value="random">Random</option>
+          <option value="quiet-current">Quiet Current</option>
+          <option value="soft-arc">Soft Arc</option>
+          <option value="diagonal-drift">Diagonal Drift</option>
+          <option value="signal-bloom">Signal Bloom</option>
+        </select>
+      </div>
     </section>
 
     <section class="settings-section settings-pane" data-settings-panel="block" role="tabpanel">
@@ -167,6 +180,7 @@ export function createSettingsPanel(root, options = {}) {
   const blockUndo = root.querySelector("[data-block-undo]");
   const gadgetScaleInput = root.querySelector("[data-gadget-scale]");
   const gadgetScaleOutput = root.querySelector("[data-gadget-scale-output]");
+  const waveBackgroundSelect = root.querySelector("[data-wave-background]");
   const colorSchemeQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
 
   colorSchemeQuery?.addEventListener("change", () => {
@@ -197,6 +211,13 @@ export function createSettingsPanel(root, options = {}) {
 
   root.querySelectorAll("[data-shape]").forEach((button) => {
     button.addEventListener("click", () => patchSettings({ shape: button.dataset.shape }));
+  });
+
+  waveBackgroundSelect.addEventListener("change", () => {
+    const value = WAVE_BACKGROUNDS.includes(waveBackgroundSelect.value)
+      ? waveBackgroundSelect.value
+      : "quiet-current";
+    patchSettings({ waveBackground: value });
   });
 
   root.querySelectorAll("[data-fidget]").forEach((button) => {
@@ -297,6 +318,9 @@ export function createSettingsPanel(root, options = {}) {
     gadgetScaleInput.value = String(settings.gadgetScale);
     gadgetScaleInput.setAttribute("aria-valuetext", formatScale(settings.gadgetScale));
     gadgetScaleOutput.value = formatScale(settings.gadgetScale);
+    waveBackgroundSelect.value = WAVE_BACKGROUNDS.includes(settings.waveBackground)
+      ? settings.waveBackground
+      : "quiet-current";
     renderBlockList();
   }
 
