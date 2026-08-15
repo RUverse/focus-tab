@@ -16,6 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { build as bundle } from "esbuild";
 
 const execFileP = promisify(execFile);
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -83,6 +84,19 @@ async function copyAsset(name, outDir) {
   });
 }
 
+async function bundleWaveBackground(outDir) {
+  await bundle({
+    entryPoints: [path.join(root, "wave-background.js")],
+    outfile: path.join(outDir, "wave-background.js"),
+    bundle: true,
+    format: "esm",
+    target: ["chrome102", "firefox142"],
+    minify: true,
+    sourcemap: false,
+    legalComments: "none"
+  });
+}
+
 async function build(target) {
   const transform = TARGETS[target];
   if (!transform) {
@@ -97,6 +111,7 @@ async function build(target) {
   await fs.mkdir(outDir, { recursive: true });
 
   await Promise.all(ASSETS.map((name) => copyAsset(name, outDir)));
+  await bundleWaveBackground(outDir);
   await fs.writeFile(
     path.join(outDir, "manifest.json"),
     JSON.stringify(manifest, null, 2) + "\n",

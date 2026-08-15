@@ -73,6 +73,18 @@ button {
   transition: background-color 220ms var(--ease), color 220ms var(--ease);
 }
 
+.wave-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.newtab > :not(.wave-background) {
+  z-index: 1;
+}
+
 .mode-dark {
   background: var(--dark-bg);
   color: var(--dark-fg);
