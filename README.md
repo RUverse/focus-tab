@@ -102,3 +102,16 @@ npm run build:chrome     # or: node build.mjs chrome
 This writes the unpacked extension to `dist/<target>/` and a store-ready
 archive to `dist/<target>.zip`. `dist/firefox.zip` is the file uploaded to
 AMO; `dist/firefox/` contains the exact, human-readable files it holds.
+
+## Releases
+
+Releases are prepared on `dev` and moved to the release-only `main` branch by a
+release pull request. `npm version <version> --no-git-tag-version` synchronizes
+the npm and extension-manifest versions. After the release pull request is
+merged, an annotated numeric tag matching `manifest.json` triggers the GitHub
+Actions release workflow.
+
+The workflow builds and tests both extension targets, attests
+`dist/chrome.zip` and `dist/firefox.zip`, and attaches them to a draft GitHub
+Release. A maintainer reviews and publishes that draft manually. See
+[`AGENTS.md`](./AGENTS.md) for the complete release procedure.

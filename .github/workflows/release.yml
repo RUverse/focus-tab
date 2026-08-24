@@ -1,0 +1,76 @@
+name: Release browser extensions
+
+on:
+  push:
+    tags:
+      - "*"
+
+env:
+  RUWAVES_COMMIT: 0256d4ca6bfc2e6175beeb76147541d1792fef26
+  RUWAVES_REPOSITORY_URL: https://github.com/RUverse/waves.git
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Check release version
+        run: >-
+          node -e 'const manifest = require("./manifest.json");
+          const pkg = require("./package.json");
+          if (process.env.GITHUB_REF_NAME !== manifest.version)
+          throw new Error(`Tag ${process.env.GITHUB_REF_NAME} does not match manifest version ${manifest.version}`);
+          if (pkg.version !== manifest.version)
+          throw new Error(`package.json ${pkg.version} does not match manifest version ${manifest.version}`)'
+
+      - name: Fetch pinned Ruwaves source
+        run: |
+          git init ../ruwaves
+          git -C ../ruwaves remote add origin "$RUWAVES_REPOSITORY_URL"
+          git -C ../ruwaves fetch --depth 1 origin "$RUWAVES_COMMIT"
+          git -C ../ruwaves checkout --detach FETCH_HEAD
+
+      - name: Use Bun for Ruwaves
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Build pinned Ruwaves package
+        working-directory: ../ruwaves
+        run: |
+          bun install --frozen-lockfile
+          bun run build:lib
+
+      - name: Test and build extensions
+        run: |
+          npm ci
+          npm test
+          npm run build
+
+      - name: Attest build provenance
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            dist/chrome.zip
+            dist/firefox.zip
+
+      - name: Create draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title="$GITHUB_REF_NAME" \
+            --draft \
+            dist/chrome.zip dist/firefox.zip
