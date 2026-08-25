@@ -1,8 +1,10 @@
 # New tab for the focused
 
+[Chrome Web Store](https://chromewebstore.google.com/detail/new-tab-focus-clock/dhkapihaomieoiihekjdnncdekhmfgaj) · [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/new-tab-focus-clock/)
+
 inspired by WHA Quotes & Clock New Tab Clone (not maintained anymore)
 
-A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab extension. Its packaged runtime is dependency-free; development uses esbuild and the local `@ruverse/waves` package to bundle animated backgrounds.
+A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab extension. Its packaged runtime is dependency-free; development uses esbuild and the published `@ruverse/waves` package to bundle animated backgrounds.
 
 ## Features
 
@@ -79,16 +81,15 @@ the `browser_specific_settings.gecko` block).
 - **OS:** any (macOS, Linux, or Windows) — the script uses only the Node
   standard library and the system `zip` command.
 - **Node.js:** 18 or newer (developed and tested on Node 22.23.0).
-- **npm:** any version bundled with the above Node. During sibling development,
-  `@ruverse/waves` resolves from `../ruwaves`; after its first publication,
-  replace the `file:` dependency with `^0.1.0`.
+- **npm:** any version bundled with the above Node. Dependencies resolve from
+  the public npm registry and are locked by `package-lock.json`.
 - **`zip`:** the Info-ZIP `zip` CLI, used to package the output. Present by
   default on macOS and most Linux distros.
 
 ### Steps
 
 ```sh
-# 1. Install the build dependency and local wave package:
+# 1. Install the locked build dependencies:
 npm install
 
 # 2. From the repository root, build both targets:
@@ -102,3 +103,16 @@ npm run build:chrome     # or: node build.mjs chrome
 This writes the unpacked extension to `dist/<target>/` and a store-ready
 archive to `dist/<target>.zip`. `dist/firefox.zip` is the file uploaded to
 AMO; `dist/firefox/` contains the exact, human-readable files it holds.
+
+## Releases
+
+Releases are prepared on `dev` and moved to the release-only `main` branch by a
+release pull request. `npm version <version> --no-git-tag-version` synchronizes
+the npm and extension-manifest versions. After the release pull request is
+merged, an annotated numeric tag matching `manifest.json` triggers the GitHub
+Actions release workflow.
+
+The workflow builds and tests both extension targets, attests
+`dist/chrome.zip` and `dist/firefox.zip`, and attaches them to a draft GitHub
+Release. A maintainer reviews and publishes that draft manually. See
+[`AGENTS.md`](./AGENTS.md) for the complete release procedure.
