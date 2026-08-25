@@ -13,7 +13,7 @@
     "version": "node version-bump.mjs && git add manifest.json"
   },
   "dependencies": {
-    "@ruverse/waves": "file:../ruwaves"
+    "@ruverse/waves": "^0.1.0"
   },
   "devDependencies": {
     "esbuild": "^0.25.11"

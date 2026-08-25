@@ -6,15 +6,6 @@ See [README.md](./README.md) for behavior, permissions, and installation.
 
 These instructions apply to the entire repository.
 
-## Local environment
-
-- Copy `.env.example` to `.env` and set `RUWAVES_DIR` to the local Ruwaves
-  checkout when working across both repositories.
-- Keep machine-specific paths, hostnames, account names, and other personal
-  workstation details only in `.env`, which is ignored by Git. Documentation
-  and tracked configuration must use portable relative paths or environment
-  variable names.
-
 ## Development
 
 - Keep the extension source dependency-light and readable. Browser-facing
@@ -52,9 +43,9 @@ These instructions apply to the entire repository.
 
 ## Wave background integration
 
-- Focus Tab consumes `@ruverse/waves` from the checkout identified by
-  `RUWAVES_DIR` through a local file dependency until version `0.1.0` is
-  published.
+- Focus Tab consumes the published `@ruverse/waves` package from npm. Keep the
+  compatible registry range in `package.json` and the resolved artifact in
+  `package-lock.json`.
 - Focus Tab owns preset IDs, labels, and values in `wave-background.js`; the
   package owns normalization and rendering.
 - Keep backgrounds non-interactive, transparent, behind every UI element, and
@@ -62,13 +53,9 @@ These instructions apply to the entire repository.
   and pinned presets remain stable.
 - `build.mjs` must bundle the wave entry into both extension targets. No bare
   `@ruverse/waves` import may remain in either packaged zip.
-- The release workflow pins the exact Ruwaves Git commit used for packaging.
-  Update `RUWAVES_COMMIT` in `.github/workflows/release.yml` whenever Focus Tab
-  starts relying on a newer sibling runtime. Once the npm dependency replaces
-  `file:`, remove the temporary checkout/build step from that workflow.
-- The release workflow fetches its pinned Ruwaves commit from the public
-  organization repository. Keep that URL organization-owned and never replace
-  it with a personal-account repository endpoint.
+- The release workflow installs the exact dependency artifact recorded in
+  `package-lock.json` with `npm ci`. Do not add sibling checkout or source-build
+  steps to extension releases.
 
 ## Code map
 

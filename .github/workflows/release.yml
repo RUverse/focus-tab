@@ -5,10 +5,6 @@ on:
     tags:
       - "*"
 
-env:
-  RUWAVES_COMMIT: 0256d4ca6bfc2e6175beeb76147541d1792fef26
-  RUWAVES_REPOSITORY_URL: https://github.com/RUverse/waves.git
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,24 +30,6 @@ jobs:
           throw new Error(`Tag ${process.env.GITHUB_REF_NAME} does not match manifest version ${manifest.version}`);
           if (pkg.version !== manifest.version)
           throw new Error(`package.json ${pkg.version} does not match manifest version ${manifest.version}`)'
-
-      - name: Fetch pinned Ruwaves source
-        run: |
-          git init ../ruwaves
-          git -C ../ruwaves remote add origin "$RUWAVES_REPOSITORY_URL"
-          git -C ../ruwaves fetch --depth 1 origin "$RUWAVES_COMMIT"
-          git -C ../ruwaves checkout --detach FETCH_HEAD
-
-      - name: Use Bun for Ruwaves
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-
-      - name: Build pinned Ruwaves package
-        working-directory: ../ruwaves
-        run: |
-          bun install --frozen-lockfile
-          bun run build:lib
 
       - name: Test and build extensions
         run: |
