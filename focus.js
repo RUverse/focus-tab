@@ -17,8 +17,7 @@ const gearButton = document.getElementById("gearButton");
 
 const blockModal = document.getElementById("blockModal");
 const settingsPanelEl = document.getElementById("settingsPanel");
-const blockPrimary = document.getElementById("blockPrimary");
-const blockCancel = document.getElementById("blockCancel");
+const settingsClose = document.getElementById("settingsClose");
 
 const distractionModal = document.getElementById("distractionModal");
 const distractionDialog = distractionModal.querySelector(".modal");
@@ -76,8 +75,7 @@ focusStartBtn.addEventListener("click", onFocusStart);
 distractionOpenBtn.addEventListener("click", () => openDistractionModal());
 gearButton.addEventListener("click", () => openBlockModal());
 
-blockPrimary.addEventListener("click", onBlockPrimary);
-blockCancel.addEventListener("click", () => closeModal(blockModal));
+settingsClose.addEventListener("click", () => closeModal(blockModal));
 
 distractionCancel.addEventListener("click", () => closeModal(distractionModal));
 breakMove.addEventListener("click", () => setBreakStep("afk"));
@@ -150,21 +148,7 @@ function openBlockModal(tab = "general") {
 }
 
 function renderSettingsModal() {
-  const idle = getFocusState(settings) === "idle";
-  blockPrimary.textContent = idle ? "Start focus" : "Done";
-  blockPrimary.disabled = idle && settings.blockList.length === 0;
-  // When focused/on a break the primary button just closes the panel, so a
-  // separate Cancel would be redundant — settings save live either way. Only
-  // keep Cancel while idle, where it means "close without starting focus".
-  blockCancel.hidden = !idle;
   settingsPanel.render(settings);
-}
-
-async function onBlockPrimary() {
-  if (getFocusState(settings) === "idle") {
-    await saveSettings({ focusActive: true, distractionUntil: 0 });
-  }
-  closeModal(blockModal);
 }
 
 // --- Distraction (break) picker -----------------------------------------

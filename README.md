@@ -1,19 +1,22 @@
 # New tab for the focused
 
+[Chrome Web Store](https://chromewebstore.google.com/detail/new-tab-focus-clock/dhkapihaomieoiihekjdnncdekhmfgaj) · [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/new-tab-focus-clock/)
+
 inspired by WHA Quotes & Clock New Tab Clone (not maintained anymore)
 
-A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab extension. Its packaged runtime is dependency-free; development uses esbuild and the local `@ruverse/waves` package to bundle animated backgrounds.
+A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab extension. Its packaged runtime is self-contained and offline; development uses esbuild, the published `@ruverse/waves` package for animated backgrounds, and Moment.js for customizable date formatting.
 
 ## Features
 
 - Chrome new-tab override
-- Dark and Light modes
-- Four deterministic animated wave backgrounds with Off, Random, and pinned-preset choices
+- Automatic light and dark modes that follow the operating system
+- Four curated animated wave backgrounds—Soft Arc, Glitched, Mood, and Signal
+  Bloom—with Off and Custom choices; Mood is the default
 - Live local clock with optional seconds and 24-hour format
 - Custom accent color, with a reset to the theme default
 - Optional progress bars for the day, month, and year
 - Optional new-tab gadgets: motivational quotes, fidget toys, and a sticky note list
-- Greeting and date
+- Greeting and date with a customizable Moment.js format
 - Rotating motivational quotes
 - **Focus mode**: a Focus button below the quote. Build a block list of sites. while focused those sites can't be opened and are redirected to this page instead.
 - **Distraction breaks**: from the focused view, open the break picker and drag
@@ -66,29 +69,43 @@ into pages and broad host access.
 
 The extension will replace Chrome's new tab page after it is loaded.
 
+## Custom wave backgrounds
+
+Choose **Custom waves** under **Background** in either settings surface, then
+paste a compact `waves:v1:` config copied from the Share menu at
+[waves.ruverse.ai](https://waves.ruverse.ai/) and press **Apply**. Focus Tab
+validates and stores the value locally, preserves the shared wave geometry and
+animation, and applies its own transparent background and light/dark wave color
+for readability. Invalid or unsupported values do not replace the active
+background.
+
+Custom config support requires the published `@ruverse/waves@^0.2.0` package.
+The codec and renderer are bundled into each extension target; no wave config
+or other personal setting is sent over the network.
+
 ## Building from source (Chrome & Firefox)
 
 The published packages are produced from the source in this repository by
-`build.mjs`. No source files are minified, transpiled, or concatenated; the
-script copies the JS/CSS/HTML verbatim and only generates `manifest.json` for
-each target (the Firefox build swaps the background to module scripts and adds
-the `browser_specific_settings.gecko` block).
+`build.mjs`. Application source is copied verbatim except for the wave renderer,
+compact-config adapter, and Moment.js date formatter, which are bundled locally.
+The script also generates `manifest.json` for each target (the Firefox build
+swaps the background to module scripts and adds the
+`browser_specific_settings.gecko` block).
 
 ### Build environment
 
 - **OS:** any (macOS, Linux, or Windows) — the script uses only the Node
   standard library and the system `zip` command.
 - **Node.js:** 18 or newer (developed and tested on Node 22.23.0).
-- **npm:** any version bundled with the above Node. During sibling development,
-  `@ruverse/waves` resolves from `../ruwaves`; after its first publication,
-  replace the `file:` dependency with `^0.1.0`.
+- **npm:** any version bundled with the above Node. Dependencies resolve from
+  the public npm registry and are locked by `package-lock.json`.
 - **`zip`:** the Info-ZIP `zip` CLI, used to package the output. Present by
   default on macOS and most Linux distros.
 
 ### Steps
 
 ```sh
-# 1. Install the build dependency and local wave package:
+# 1. Install the locked build dependencies:
 npm install
 
 # 2. From the repository root, build both targets:
@@ -102,3 +119,17 @@ npm run build:chrome     # or: node build.mjs chrome
 This writes the unpacked extension to `dist/<target>/` and a store-ready
 archive to `dist/<target>.zip`. `dist/firefox.zip` is the file uploaded to
 AMO; `dist/firefox/` contains the exact, human-readable files it holds.
+
+## Releases
+
+Releases are prepared on `dev` and moved to the release-only `main` branch by a
+release pull request. `npm version <version> --no-git-tag-version` synchronizes
+the npm and extension-manifest versions before that pull request is merged.
+After the merge, release notes are prepared and an annotated numeric tag
+matching `manifest.json` triggers the GitHub Actions release workflow.
+
+The workflow builds and tests both extension targets, attests
+`dist/chrome.zip` and `dist/firefox.zip`, and attaches them to a draft GitHub
+Release. A maintainer pastes in the prepared release notes, reviews the draft,
+and publishes it manually. See
+[`AGENTS.md`](./AGENTS.md) for the complete release procedure.

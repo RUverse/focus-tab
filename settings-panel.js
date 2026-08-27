@@ -1,13 +1,19 @@
 import {
+  CUSTOM_WAVE_CONFIG_MAX_LENGTH,
+  DATE_FORMAT_MAX_LENGTH,
   DEFAULT_CLOCK_COLORS,
+  DEFAULT_SETTINGS,
   GADGET_SCALE_MAX,
   GADGET_SCALE_MIN,
   GADGET_SCALE_STEP,
   WAVE_BACKGROUNDS,
   getFocusState,
+  getSystemColorScheme,
   normalizeHost,
   saveSettings
 } from "./shared.js";
+import { formatDate } from "./date-format.js";
+import { parseWaveConfig } from "./wave-config.js";
 
 export function createSettingsPanel(root, options = {}) {
   let settings = options.getSettings();
@@ -15,6 +21,20 @@ export function createSettingsPanel(root, options = {}) {
   let lastRemoved = null;
   let lockedRemoveHost = "";
   let nameSaveTimer = 0;
+  let dateFormatSaveTimer = 0;
+  let customEditorOpen = settings.waveBackground === "custom";
+  let customWaveDraft = settings.customWaveConfig;
+  let customWaveStatus = "";
+  let customWaveStatusKind = "";
+
+  if (customEditorOpen) {
+    try {
+      customWaveDraft = parseWaveConfig(customWaveDraft).canonical;
+    } catch (error) {
+      customWaveStatus = savedCustomWaveError(error);
+      customWaveStatusKind = "error";
+    }
+  }
 
   root.innerHTML = `
     <div class="settings-tabs" role="tablist" aria-label="Settings sections">
@@ -50,10 +70,12 @@ export function createSettingsPanel(root, options = {}) {
       </div>
 
       <div class="setting-row">
-        <span class="setting-label">Theme</span>
-        <div class="segmented" role="group" aria-label="Theme">
-          <button type="button" class="seg-button" data-mode="dark">Dark</button>
-          <button type="button" class="seg-button" data-mode="light">Light</button>
+        <label class="setting-label" for="dateFormatInput">Date format</label>
+        <div class="date-format-control">
+          <input class="setting-input" id="dateFormatInput" data-date-format-input type="text" maxlength="${DATE_FORMAT_MAX_LENGTH}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Date format" aria-describedby="dateFormatHelp">
+          <p class="date-format-help" id="dateFormatHelp">
+            Preview: <output data-date-format-preview aria-live="polite"></output>
+          </p>
         </div>
       </div>
 
@@ -98,15 +120,33 @@ export function createSettingsPanel(root, options = {}) {
       </div>
 
       <div class="setting-row">
-        <label class="setting-label" for="waveBackgroundSelect">Background waves</label>
-        <select class="setting-input" id="waveBackgroundSelect" data-wave-background>
-          <option value="off">Off</option>
-          <option value="random">Random</option>
-          <option value="quiet-current">Quiet Current</option>
-          <option value="soft-arc">Soft Arc</option>
-          <option value="diagonal-drift">Diagonal Drift</option>
-          <option value="signal-bloom">Signal Bloom</option>
-        </select>
+        <label class="setting-label" for="waveBackgroundSelect">Background</label>
+        <div class="select-control">
+          <select class="setting-input" id="waveBackgroundSelect" data-wave-background>
+            <option value="off">Off</option>
+            <option value="soft-arc">Soft Arc</option>
+            <option value="glitched">Glitched</option>
+            <option value="mood">Mood</option>
+            <option value="signal-bloom">Signal Bloom</option>
+            <option value="custom">Custom waves</option>
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="m3 6 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="custom-wave-editor" data-custom-wave-editor hidden>
+        <label class="custom-wave-label" for="customWaveConfig">Custom wave config</label>
+        <textarea class="custom-wave-input" id="customWaveConfig" data-custom-wave-input rows="4" maxlength="${CUSTOM_WAVE_CONFIG_MAX_LENGTH}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="customWaveHelp customWaveStatus" placeholder="waves:v1:{}"></textarea>
+        <p class="custom-wave-help" id="customWaveHelp">
+          Copy a compact config from the Share menu on
+          <a href="https://waves.ruverse.ai/" target="_blank" rel="noreferrer">Waves</a>.
+        </p>
+        <div class="custom-wave-actions">
+          <button type="button" class="custom-wave-apply" data-custom-wave-apply>Apply</button>
+          <p class="custom-wave-status" id="customWaveStatus" data-custom-wave-status role="status" aria-live="polite" hidden></p>
+        </div>
       </div>
     </section>
 
@@ -178,6 +218,8 @@ export function createSettingsPanel(root, options = {}) {
   const tabButtons = Array.from(root.querySelectorAll("[data-settings-tab]"));
   const panels = Array.from(root.querySelectorAll("[data-settings-panel]"));
   const nameInput = root.querySelector("[data-name-input]");
+  const dateFormatInput = root.querySelector("[data-date-format-input]");
+  const dateFormatPreview = root.querySelector("[data-date-format-preview]");
   const clockColorInput = root.querySelector("[data-clock-color-input]");
   const clockColorReset = root.querySelector("[data-clock-color-reset]");
   const blockForm = root.querySelector("[data-block-form]");
@@ -188,6 +230,17 @@ export function createSettingsPanel(root, options = {}) {
   const gadgetScaleInput = root.querySelector("[data-gadget-scale]");
   const gadgetScaleOutput = root.querySelector("[data-gadget-scale-output]");
   const waveBackgroundSelect = root.querySelector("[data-wave-background]");
+  const customWaveEditor = root.querySelector("[data-custom-wave-editor]");
+  const customWaveInput = root.querySelector("[data-custom-wave-input]");
+  const customWaveApply = root.querySelector("[data-custom-wave-apply]");
+  const customWaveStatusEl = root.querySelector("[data-custom-wave-status]");
+  const colorSchemeQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
+
+  colorSchemeQuery?.addEventListener("change", () => {
+    if (!settings.clockColor) {
+      clockColorInput.value = DEFAULT_CLOCK_COLORS[getSystemColorScheme()];
+    }
+  });
 
   tabButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -195,10 +248,6 @@ export function createSettingsPanel(root, options = {}) {
       render();
       focusCurrentTab();
     });
-  });
-
-  root.querySelectorAll("[data-mode]").forEach((button) => {
-    button.addEventListener("click", () => patchSettings({ mode: button.dataset.mode }));
   });
 
   root.querySelectorAll("[data-progress]").forEach((button) => {
@@ -217,11 +266,69 @@ export function createSettingsPanel(root, options = {}) {
     button.addEventListener("click", () => patchSettings({ shape: button.dataset.shape }));
   });
 
-  waveBackgroundSelect.addEventListener("change", () => {
+  waveBackgroundSelect.addEventListener("change", async () => {
     const value = WAVE_BACKGROUNDS.includes(waveBackgroundSelect.value)
       ? waveBackgroundSelect.value
-      : "quiet-current";
-    patchSettings({ waveBackground: value });
+      : DEFAULT_SETTINGS.waveBackground;
+
+    if (value === "custom") {
+      customEditorOpen = true;
+      customWaveDraft = settings.customWaveConfig;
+      customWaveStatus = "";
+      customWaveStatusKind = "";
+
+      try {
+        const parsed = parseCandidate(customWaveDraft);
+        customWaveDraft = parsed.canonical;
+        customWaveStatus = "Saved custom waves applied.";
+        customWaveStatusKind = "success";
+        renderCustomWaveEditor();
+        await patchSettings({
+          customWaveConfig: parsed.canonical,
+          waveBackground: "custom"
+        });
+      } catch (error) {
+        if (customWaveDraft) {
+          customWaveStatus = candidateError(error);
+          customWaveStatusKind = "error";
+        }
+        render();
+        customWaveInput.focus();
+      }
+      return;
+    }
+
+    customEditorOpen = false;
+    customWaveDraft = "";
+    customWaveStatus = "";
+    customWaveStatusKind = "";
+    await patchSettings({ waveBackground: value });
+  });
+
+  customWaveInput.addEventListener("input", () => {
+    customWaveDraft = customWaveInput.value;
+    customWaveStatus = "";
+    customWaveStatusKind = "";
+    renderCustomWaveEditor();
+  });
+
+  customWaveApply.addEventListener("click", async () => {
+    customWaveDraft = customWaveInput.value;
+
+    try {
+      const parsed = parseCandidate(customWaveDraft);
+      customWaveDraft = parsed.canonical;
+      customWaveStatus = "Custom waves applied.";
+      customWaveStatusKind = "success";
+      await patchSettings({
+        customWaveConfig: parsed.canonical,
+        waveBackground: "custom"
+      });
+    } catch (error) {
+      customWaveStatus = candidateError(error);
+      customWaveStatusKind = "error";
+      renderCustomWaveEditor();
+    }
   });
 
   root.querySelectorAll("[data-fidget]").forEach((button) => {
@@ -251,6 +358,15 @@ export function createSettingsPanel(root, options = {}) {
   });
   nameInput.addEventListener("change", () => patchSettings({ name: nameInput.value }));
   nameInput.addEventListener("blur", () => patchSettings({ name: nameInput.value }));
+
+  dateFormatInput.addEventListener("input", () => {
+    renderDateFormatPreview(dateFormatInput.value);
+    window.clearTimeout(dateFormatSaveTimer);
+    const value = dateFormatInput.value;
+    dateFormatSaveTimer = window.setTimeout(() => patchSettings({ dateFormat: value }), 180);
+  });
+  dateFormatInput.addEventListener("change", () => patchSettings({ dateFormat: dateFormatInput.value }));
+  dateFormatInput.addEventListener("blur", () => patchSettings({ dateFormat: dateFormatInput.value }));
 
   clockColorInput.addEventListener("input", saveClockColor);
   clockColorInput.addEventListener("change", saveClockColor);
@@ -301,10 +417,21 @@ export function createSettingsPanel(root, options = {}) {
   });
 
   function render(nextSettings = settings) {
+    const wasCustom = settings.waveBackground === "custom";
     settings = nextSettings;
 
+    if (!wasCustom && settings.waveBackground === "custom" && !customEditorOpen) {
+      customEditorOpen = true;
+      customWaveDraft = settings.customWaveConfig;
+      try {
+        customWaveDraft = parseCandidate(customWaveDraft).canonical;
+      } catch (error) {
+        customWaveStatus = savedCustomWaveError(error);
+        customWaveStatusKind = "error";
+      }
+    }
+
     renderTabs();
-    setActive("[data-mode]", (button) => button.dataset.mode === settings.mode);
     setActive("[data-progress]", (button) => (button.dataset.progress === "true") === settings.showProgressBars);
     setActive("[data-hour24]", (button) => (button.dataset.hour24 === "true") === settings.hour24);
     setActive("[data-seconds]", (button) => (button.dataset.seconds === "true") === settings.showSeconds);
@@ -317,16 +444,34 @@ export function createSettingsPanel(root, options = {}) {
     if (document.activeElement !== nameInput) {
       nameInput.value = settings.name;
     }
+    if (document.activeElement !== dateFormatInput) {
+      dateFormatInput.value = settings.dateFormat;
+    }
+    renderDateFormatPreview(dateFormatInput.value);
 
-    clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[settings.mode] || DEFAULT_CLOCK_COLORS.dark;
+    clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[getSystemColorScheme()];
     clockColorReset.hidden = !settings.clockColor;
     gadgetScaleInput.value = String(settings.gadgetScale);
     gadgetScaleInput.setAttribute("aria-valuetext", formatScale(settings.gadgetScale));
     gadgetScaleOutput.value = formatScale(settings.gadgetScale);
-    waveBackgroundSelect.value = WAVE_BACKGROUNDS.includes(settings.waveBackground)
-      ? settings.waveBackground
-      : "quiet-current";
+    waveBackgroundSelect.value = customEditorOpen
+      ? "custom"
+      : WAVE_BACKGROUNDS.includes(settings.waveBackground)
+        ? settings.waveBackground
+        : DEFAULT_SETTINGS.waveBackground;
+    renderCustomWaveEditor();
     renderBlockList();
+  }
+
+  function renderCustomWaveEditor() {
+    customWaveEditor.hidden = !customEditorOpen;
+    if (document.activeElement !== customWaveInput) {
+      customWaveInput.value = customWaveDraft;
+    }
+    customWaveInput.setAttribute("aria-invalid", String(customWaveStatusKind === "error"));
+    customWaveStatusEl.textContent = customWaveStatus;
+    customWaveStatusEl.dataset.kind = customWaveStatusKind;
+    customWaveStatusEl.hidden = !customWaveStatus;
   }
 
   function renderTabs() {
@@ -402,6 +547,7 @@ export function createSettingsPanel(root, options = {}) {
 
   async function patchSettings(patch) {
     window.clearTimeout(nameSaveTimer);
+    window.clearTimeout(dateFormatSaveTimer);
     settings = await saveSettings(patch);
     options.onAfterSave?.(settings);
     render(settings);
@@ -410,6 +556,11 @@ export function createSettingsPanel(root, options = {}) {
 
   function saveClockColor() {
     patchSettings({ clockColor: clockColorInput.value });
+  }
+
+  function renderDateFormatPreview(value) {
+    const format = value.trim() || DEFAULT_SETTINGS.dateFormat;
+    dateFormatPreview.value = formatDate(new Date(), format) || "(empty output)";
   }
 
   function getLocked() {
@@ -443,4 +594,26 @@ export function createSettingsPanel(root, options = {}) {
 function formatScale(value) {
   const rounded = Math.round(Number(value) * 100) / 100;
   return `${rounded.toFixed(2).replace(/\.?0+$/, "")}x`;
+}
+
+function parseCandidate(candidate) {
+  if (candidate.length > CUSTOM_WAVE_CONFIG_MAX_LENGTH) {
+    throw new TypeError(`Wave config must be ${CUSTOM_WAVE_CONFIG_MAX_LENGTH} characters or fewer`);
+  }
+
+  const parsed = parseWaveConfig(candidate);
+  if (parsed.canonical.length > CUSTOM_WAVE_CONFIG_MAX_LENGTH) {
+    throw new TypeError(`Wave config must be ${CUSTOM_WAVE_CONFIG_MAX_LENGTH} characters or fewer`);
+  }
+  return parsed;
+}
+
+function candidateError(error) {
+  const detail = error instanceof Error ? error.message : "The value could not be decoded";
+  return `Could not apply custom waves. ${detail}.`;
+}
+
+function savedCustomWaveError(error) {
+  const detail = error instanceof Error ? error.message : "The value could not be decoded";
+  return `Saved custom waves are invalid. Mood is showing instead. ${detail}.`;
 }

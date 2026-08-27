@@ -1,12 +1,11 @@
 import {
-  MODES,
   QUOTES,
   applyGadgetScaleStyles,
   loadSettings,
   onSettingsChanged,
-  pickRandom,
-  saveSettings
+  pickRandom
 } from "./shared.js";
+import { formatDate } from "./date-format.js";
 
 const root = document.getElementById("newtab");
 const timeNode = document.getElementById("time");
@@ -15,7 +14,6 @@ const dateNode = document.getElementById("date");
 const quoteBlockNode = document.getElementById("quoteBlock");
 const quoteTextNode = document.getElementById("quoteText");
 const quoteAuthorNode = document.getElementById("quoteAuthor");
-const modeButtons = Array.from(document.querySelectorAll("[data-mode]"));
 const progressBarsNode = document.getElementById("progressBars");
 const progressBars = [
   { fill: document.getElementById("progressDay"), bar: document.getElementById("progressDayBar") },
@@ -34,14 +32,7 @@ let activeQuote = pickRandom(QUOTES);
 quoteTextNode.textContent = activeQuote.text;
 quoteAuthorNode.textContent = activeQuote.author;
 
-modeButtons.forEach((button) => {
-  button.addEventListener("click", async () => {
-    settings = await saveSettings({ mode: button.dataset.mode });
-    renderMode();
-  });
-});
-
-document.addEventListener("keydown", async (event) => {
+document.addEventListener("keydown", (event) => {
   const target = event.target;
   const isTyping =
     target instanceof HTMLInputElement ||
@@ -49,17 +40,6 @@ document.addEventListener("keydown", async (event) => {
     (target instanceof HTMLElement && target.isContentEditable);
 
   if (isTyping || event.metaKey || event.ctrlKey || event.altKey) {
-    return;
-  }
-
-  const keyMode = {
-    d: "dark",
-    l: "light"
-  }[event.key.toLowerCase()];
-
-  if (keyMode) {
-    settings = await saveSettings({ mode: keyMode });
-    renderMode();
     return;
   }
 
@@ -197,19 +177,11 @@ function render() {
 }
 
 function renderMode() {
-  root.classList.remove(...MODES.map((mode) => `mode-${mode}`));
-  root.classList.add(`mode-${settings.mode}`);
   applyGadgetScaleStyles(root, settings.gadgetScale);
 
   // Shape applies to the whole document (incl. modals, which live outside #newtab),
   // so the round-corner styles hang off <body> rather than the page root.
   document.body.classList.toggle("shape-round", settings.shape === "round");
-
-  modeButtons.forEach((button) => {
-    const isActive = button.dataset.mode === settings.mode;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-  });
 
   // Custom clock colour overrides the theme foreground; empty falls back to it.
   timeNode.style.color = settings.clockColor || "";
@@ -245,7 +217,7 @@ function renderClock() {
   });
 
   greetingNode.textContent = `${getGreeting(rawHour)}, ${settings.name}`;
-  dateNode.textContent = `${now.getMonth() + 1}-${now.getDate()}-${now.getFullYear()}`;
+  dateNode.textContent = formatDate(now, settings.dateFormat);
 
   renderProgress(now);
 }

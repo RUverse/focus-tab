@@ -29,7 +29,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -151,6 +153,128 @@ h1 {
   padding: 7px 9px;
   font-size: 0.85rem;
   font-weight: 700;
+}
+
+.select-control {
+  position: relative;
+  width: 190px;
+}
+
+.select-control .setting-input {
+  width: 100%;
+  padding-right: 32px;
+  appearance: none;
+}
+
+.select-chevron {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.date-format-control {
+  display: grid;
+  gap: 5px;
+  width: 190px;
+}
+
+.date-format-control .setting-input {
+  width: 100%;
+}
+
+.date-format-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.date-format-help output {
+  color: var(--fg);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.custom-wave-editor {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 12px;
+}
+
+.custom-wave-editor[hidden],
+.custom-wave-status[hidden] {
+  display: none;
+}
+
+.custom-wave-label {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.custom-wave-input {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  padding: 9px 10px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.custom-wave-input::placeholder {
+  color: var(--muted);
+}
+
+.custom-wave-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+.custom-wave-help a {
+  color: var(--fg);
+  text-underline-offset: 2px;
+}
+
+.custom-wave-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.custom-wave-apply {
+  flex: none;
+  min-height: 32px;
+  border: 1px solid var(--active);
+  background: var(--active);
+  color: var(--active-fg);
+  padding: 0 14px;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.custom-wave-status {
+  margin: 0;
+  color: #357c43;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.custom-wave-status[data-kind="error"] {
+  color: var(--danger);
 }
 
 .segmented {
@@ -328,8 +452,48 @@ h1 {
   font-size: 0.82rem;
 }
 
+/* Reflect the shared shape preference in the toolbar popup as well as the
+   new-tab settings modal. */
+.shape-round .settings-tabs,
+.shape-round .segmented {
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.shape-round .select-chevron {
+  right: 16px;
+}
+
+.shape-round .setting-input,
+.shape-round .color-input,
+.shape-round .custom-wave-editor,
+.shape-round .custom-wave-input,
+.shape-round .custom-wave-apply,
+.shape-round .block-add input,
+.shape-round .block-add button,
+.shape-round .block-list li {
+  border-radius: 20px;
+}
+
+.shape-round .color-input {
+  overflow: hidden;
+}
+
+.shape-round .color-input::-webkit-color-swatch,
+.shape-round .color-input::-moz-color-swatch {
+  border-radius: 16px;
+}
+
+.shape-round .block-remove,
+.shape-round .undo-button {
+  border-radius: 999px;
+}
+
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
   position: relative;
   z-index: 1;
   outline: 2px solid #3d6dff;
@@ -346,5 +510,9 @@ input:focus-visible {
     --active: #f2f2f2;
     --active-fg: #111111;
     --danger: #f0786f;
+  }
+
+  .custom-wave-status:not([data-kind="error"]) {
+    color: #9ad5a5;
   }
 }

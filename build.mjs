@@ -97,6 +97,32 @@ async function bundleWaveBackground(outDir) {
   });
 }
 
+async function bundleWaveConfig(outDir) {
+  await bundle({
+    entryPoints: [path.join(root, "wave-config.js")],
+    outfile: path.join(outDir, "wave-config.js"),
+    bundle: true,
+    format: "esm",
+    target: ["chrome102", "firefox142"],
+    minify: true,
+    sourcemap: false,
+    legalComments: "none"
+  });
+}
+
+async function bundleDateFormat(outDir) {
+  await bundle({
+    entryPoints: [path.join(root, "date-format.js")],
+    outfile: path.join(outDir, "date-format.js"),
+    bundle: true,
+    format: "esm",
+    target: ["chrome102", "firefox142"],
+    minify: true,
+    sourcemap: false,
+    legalComments: "none"
+  });
+}
+
 async function build(target) {
   const transform = TARGETS[target];
   if (!transform) {
@@ -111,7 +137,11 @@ async function build(target) {
   await fs.mkdir(outDir, { recursive: true });
 
   await Promise.all(ASSETS.map((name) => copyAsset(name, outDir)));
-  await bundleWaveBackground(outDir);
+  await Promise.all([
+    bundleWaveBackground(outDir),
+    bundleWaveConfig(outDir),
+    bundleDateFormat(outDir)
+  ]);
   await fs.writeFile(
     path.join(outDir, "manifest.json"),
     JSON.stringify(manifest, null, 2) + "\n",

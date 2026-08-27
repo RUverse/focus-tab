@@ -1,5 +1,5 @@
 :root {
-  color-scheme: dark light;
+  color-scheme: light dark;
   --ease: cubic-bezier(0.2, 0, 0.2, 1);
   --font-main: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   /* Rounded counterpart to --font-main, used for the clock in "round" shape.
@@ -33,7 +33,9 @@ body {
 a,
 button,
 input,
-label {
+label,
+select,
+textarea {
   font: inherit;
 }
 
@@ -70,6 +72,9 @@ button {
   --sticky-note-padding-x: 12px;
   --sticky-note-padding-bottom: 12px;
   --sticky-note-font-size: 0.88rem;
+  --quote-opacity: 0.9;
+  background: var(--light-bg);
+  color: var(--light-fg);
   transition: background-color 220ms var(--ease), color 220ms var(--ease);
 }
 
@@ -85,33 +90,54 @@ button {
   z-index: 1;
 }
 
-.mode-dark {
-  background: var(--dark-bg);
-  color: var(--dark-fg);
+@media (prefers-color-scheme: dark) {
+  .newtab {
+    --quote-opacity: 0.55;
+    background: var(--dark-bg);
+    color: var(--dark-fg);
+  }
 }
 
-.mode-light {
-  background: var(--light-bg);
-  color: var(--light-fg);
-}
-
-.top-links {
+.footer-links {
   position: absolute;
-  top: 28px;
-  right: 38px;
+  bottom: 40px;
+  left: 46px;
   display: flex;
   gap: 8px;
   align-items: center;
   color: currentColor;
   font-size: 0.625rem;
   font-weight: 700;
-  opacity: 0.28;
   text-transform: uppercase;
 }
 
-.top-links a {
+.footer-links a {
   color: inherit;
   text-decoration: none;
+  opacity: 0.28;
+  transition: opacity 160ms var(--ease);
+}
+
+.footer-links a:hover,
+.footer-links a:focus-visible {
+  opacity: 0.95;
+  outline: none;
+}
+
+.footer-separator {
+  font-weight: 300;
+  opacity: 0.28;
+}
+
+.footer-links .github-link {
+  display: grid;
+  place-items: center;
+}
+
+.github-link svg {
+  width: 12px;
+  height: 12px;
+  transform: translateY(1px);
 }
 
 .for-later[hidden] {
@@ -270,7 +296,7 @@ button {
      A fixed width here would left-anchor the line and let it overflow only to
      the right (off-center) once the text is wider than the box — e.g. in 24h. */
   max-width: none;
-  font-size: clamp(5rem, 22vw, 17rem);
+  font-size: clamp(4rem, 17.6vw, 13.6rem);
   font-weight: 900;
   line-height: 0.9;
   text-align: center;
@@ -319,7 +345,7 @@ button {
   max-width: min(640px, 100%);
   margin: 0;
   color: currentColor;
-  opacity: 0.9;
+  opacity: var(--quote-opacity);
 }
 
 .quote-block blockquote {
@@ -334,51 +360,6 @@ button {
   font-size: clamp(0.8125rem, 1.2vw, 0.95rem);
   font-weight: 700;
   opacity: 0.7;
-}
-
-.mode-dark .quote-block {
-  opacity: 0.55;
-}
-
-.mode-switcher {
-  position: absolute;
-  bottom: 48px;
-  left: 46px;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  color: currentColor;
-  font-size: 0.5625rem;
-  font-weight: 900;
-  opacity: 0.34;
-  text-transform: uppercase;
-}
-
-.mode-label {
-  opacity: 0.72;
-}
-
-.mode-button {
-  min-height: 24px;
-  padding: 5px 7px;
-  color: inherit;
-  cursor: pointer;
-  font-size: inherit;
-  font-weight: inherit;
-  line-height: 1;
-  text-transform: inherit;
-}
-
-.mode-button:hover,
-.mode-button:focus-visible {
-  opacity: 1;
-  outline: 1px solid currentColor;
-  outline-offset: 2px;
-}
-
-.mode-button.is-active {
-  outline: 1px solid currentColor;
-  outline-offset: 0;
 }
 
 /* Focus controls below the quote */
@@ -475,7 +456,7 @@ button {
 }
 
 /* Fidget toy: minimal line art in the page's foreground colour (white in dark
-   mode). Defaults to the bottom-left corner above the MODE switcher; dragging
+   mode). Defaults to the bottom-left corner; dragging
    overrides left/top inline (the fixed height makes `top` win over `bottom`). */
 .fidget {
   position: absolute;
@@ -651,8 +632,6 @@ button {
 .gear-button {
   position: absolute;
   right: 46px;
-  /* Align the gear's vertical centre with the MODE switcher row on the left.
-     Switcher centre ≈ 48px + ~half its height; the 40px gear matches at 40px. */
   bottom: 40px;
   display: grid;
   place-items: center;
@@ -667,8 +646,7 @@ button {
 .gear-button:hover,
 .gear-button:focus-visible {
   opacity: 0.95;
-  outline: 1px solid currentColor;
-  outline-offset: 2px;
+  outline: none;
 }
 
 /* Modals (always dark, regardless of page mode) */
@@ -834,6 +812,137 @@ button {
   padding: 6px 9px;
   font-size: 0.85rem;
   font-weight: 700;
+}
+
+.select-control {
+  position: relative;
+  width: min(190px, 58%);
+}
+
+.select-control .setting-input {
+  width: 100%;
+  padding-right: 32px;
+  appearance: none;
+}
+
+.select-chevron {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.date-format-control {
+  display: grid;
+  gap: 5px;
+  width: min(190px, 58%);
+}
+
+.date-format-control .setting-input {
+  width: 100%;
+}
+
+.date-format-help {
+  margin: 0;
+  color: #adadad;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.date-format-help output {
+  color: #f1f1f1;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.custom-wave-editor {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #333333;
+  padding: 12px;
+}
+
+.custom-wave-editor[hidden],
+.custom-wave-status[hidden] {
+  display: none;
+}
+
+.custom-wave-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.custom-wave-input {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  border: 1px solid #3c3c3c;
+  background: #1c1c1c;
+  color: #f1f1f1;
+  padding: 9px 10px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.custom-wave-input::placeholder {
+  color: #888888;
+}
+
+.custom-wave-help {
+  margin: 0;
+  color: #adadad;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.custom-wave-help a {
+  color: #f1f1f1;
+  text-underline-offset: 2px;
+}
+
+.custom-wave-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.custom-wave-apply {
+  flex: none;
+  min-height: 32px;
+  border: 1px solid #f1f1f1;
+  background: #f1f1f1;
+  color: #111111;
+  padding: 0 14px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.custom-wave-status {
+  margin: 0;
+  color: #9ad5a5;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.custom-wave-status[data-kind="error"] {
+  color: var(--distract);
+}
+
+.custom-wave-input:focus-visible,
+.custom-wave-apply:focus-visible,
+.custom-wave-help a:focus-visible,
+.setting-input:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid #7ea0ff;
+  outline-offset: 2px;
 }
 
 .segmented {
@@ -1236,7 +1345,6 @@ button {
    so these only apply when the user opts into round corners in settings. */
 .shape-round .focus-start,
 .shape-round .distraction-open,
-.shape-round .mode-button,
 .shape-round .progress-bar,
 .shape-round .progress-fill {
   border-radius: 999px;
@@ -1257,12 +1365,21 @@ button {
   border-radius: 32px;
 }
 
+.shape-round .settings-tabs,
 .shape-round .segmented {
   border-radius: 999px;
   overflow: hidden;
 }
 
+.shape-round .select-chevron {
+  right: 16px;
+}
+
+.shape-round .setting-input,
 .shape-round .color-input,
+.shape-round .custom-wave-editor,
+.shape-round .custom-wave-input,
+.shape-round .custom-wave-apply,
 .shape-round .block-add input,
 .shape-round .block-add button,
 .shape-round .block-list li,
@@ -1271,6 +1388,15 @@ button {
 .shape-round .break-choice,
 .shape-round .reason-input {
   border-radius: 20px;
+}
+
+.shape-round .color-input {
+  overflow: hidden;
+}
+
+.shape-round .color-input::-webkit-color-swatch,
+.shape-round .color-input::-moz-color-swatch {
+  border-radius: 16px;
 }
 
 .shape-round .block-remove,
@@ -1285,21 +1411,13 @@ button {
 }
 
 @media (max-width: 560px) {
-  .top-links {
-    top: 22px;
-    right: 24px;
+  .footer-links {
+    bottom: 20px;
+    left: 20px;
     max-width: 210px;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
     row-gap: 3px;
-  }
-
-  .mode-switcher {
-    bottom: 28px;
-    left: 20px;
-    max-width: calc(100vw - 112px);
-    flex-wrap: wrap;
-    gap: 5px;
   }
 
   .gear-button {

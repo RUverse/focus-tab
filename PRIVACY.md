@@ -19,7 +19,7 @@ The extension saves your settings locally using the browser's
 - Your focus / break state and the current break timer
 - Recent break reasons you've entered
 - Sticky note list content, if you enable that gadget
-- New‑tab display preferences (clock format, theme, custom accent color,
+- New‑tab display preferences (clock format, custom accent color,
   gadget visibility, progress bars, and your display name)
 
 This information never leaves your device. It is not sent to the developer or
