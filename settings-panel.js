@@ -74,8 +74,7 @@ export function createSettingsPanel(root, options = {}) {
         <div class="date-format-control">
           <input class="setting-input" id="dateFormatInput" data-date-format-input type="text" maxlength="${DATE_FORMAT_MAX_LENGTH}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Date format" aria-describedby="dateFormatHelp">
           <p class="date-format-help" id="dateFormatHelp">
-            Preview: <output data-date-format-preview aria-live="polite"></output><br>
-            Tokens: dddd weekday · MMMM month · D day · YYYY year
+            Preview: <output data-date-format-preview aria-live="polite"></output>
           </p>
         </div>
       </div>
@@ -122,14 +121,19 @@ export function createSettingsPanel(root, options = {}) {
 
       <div class="setting-row">
         <label class="setting-label" for="waveBackgroundSelect">Background</label>
-        <select class="setting-input" id="waveBackgroundSelect" data-wave-background>
-          <option value="off">Off</option>
-          <option value="soft-arc">Soft Arc</option>
-          <option value="glitched">Glitched</option>
-          <option value="mood">Mood</option>
-          <option value="signal-bloom">Signal Bloom</option>
-          <option value="custom">Custom waves</option>
-        </select>
+        <div class="select-control">
+          <select class="setting-input" id="waveBackgroundSelect" data-wave-background>
+            <option value="off">Off</option>
+            <option value="soft-arc">Soft Arc</option>
+            <option value="glitched">Glitched</option>
+            <option value="mood">Mood</option>
+            <option value="signal-bloom">Signal Bloom</option>
+            <option value="custom">Custom waves</option>
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="m3 6 5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
       </div>
 
       <div class="custom-wave-editor" data-custom-wave-editor hidden>

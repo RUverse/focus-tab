@@ -814,6 +814,27 @@ button {
   font-weight: 700;
 }
 
+.select-control {
+  position: relative;
+  width: min(190px, 58%);
+}
+
+.select-control .setting-input {
+  width: 100%;
+  padding-right: 32px;
+  appearance: none;
+}
+
+.select-chevron {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
 .date-format-control {
   display: grid;
   gap: 5px;
@@ -1344,13 +1365,18 @@ button {
   border-radius: 32px;
 }
 
+.shape-round .settings-tabs,
 .shape-round .segmented {
   border-radius: 999px;
   overflow: hidden;
 }
 
+.shape-round .select-chevron {
+  right: 16px;
+}
+
+.shape-round .setting-input,
 .shape-round .color-input,
-.shape-round .date-format-control .setting-input,
 .shape-round .custom-wave-editor,
 .shape-round .custom-wave-input,
 .shape-round .custom-wave-apply,
@@ -1362,6 +1388,15 @@ button {
 .shape-round .break-choice,
 .shape-round .reason-input {
   border-radius: 20px;
+}
+
+.shape-round .color-input {
+  overflow: hidden;
+}
+
+.shape-round .color-input::-webkit-color-swatch,
+.shape-round .color-input::-moz-color-swatch {
+  border-radius: 16px;
 }
 
 .shape-round .block-remove,

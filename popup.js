@@ -21,5 +21,6 @@ onSettingsChanged((nextSettings) => {
 render();
 
 function render() {
+  document.body.classList.toggle("shape-round", settings.shape === "round");
   settingsPanel.render(settings);
 }
