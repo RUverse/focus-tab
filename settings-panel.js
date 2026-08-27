@@ -1,5 +1,6 @@
 import {
   CUSTOM_WAVE_CONFIG_MAX_LENGTH,
+  DATE_FORMAT_MAX_LENGTH,
   DEFAULT_CLOCK_COLORS,
   DEFAULT_SETTINGS,
   GADGET_SCALE_MAX,
@@ -11,6 +12,7 @@ import {
   normalizeHost,
   saveSettings
 } from "./shared.js";
+import { formatDate } from "./date-format.js";
 import { parseWaveConfig } from "./wave-config.js";
 
 export function createSettingsPanel(root, options = {}) {
@@ -19,6 +21,7 @@ export function createSettingsPanel(root, options = {}) {
   let lastRemoved = null;
   let lockedRemoveHost = "";
   let nameSaveTimer = 0;
+  let dateFormatSaveTimer = 0;
   let customEditorOpen = settings.waveBackground === "custom";
   let customWaveDraft = settings.customWaveConfig;
   let customWaveStatus = "";
@@ -64,6 +67,17 @@ export function createSettingsPanel(root, options = {}) {
       <div class="setting-row">
         <span class="setting-label">Name</span>
         <input class="setting-input" data-name-input type="text" maxlength="28" autocomplete="off" spellcheck="false" aria-label="Name">
+      </div>
+
+      <div class="setting-row">
+        <label class="setting-label" for="dateFormatInput">Date format</label>
+        <div class="date-format-control">
+          <input class="setting-input" id="dateFormatInput" data-date-format-input type="text" maxlength="${DATE_FORMAT_MAX_LENGTH}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Date format" aria-describedby="dateFormatHelp">
+          <p class="date-format-help" id="dateFormatHelp">
+            Preview: <output data-date-format-preview aria-live="polite"></output><br>
+            Tokens: dddd weekday · MMMM month · D day · YYYY year
+          </p>
+        </div>
       </div>
 
       <div class="setting-row">
@@ -200,6 +214,8 @@ export function createSettingsPanel(root, options = {}) {
   const tabButtons = Array.from(root.querySelectorAll("[data-settings-tab]"));
   const panels = Array.from(root.querySelectorAll("[data-settings-panel]"));
   const nameInput = root.querySelector("[data-name-input]");
+  const dateFormatInput = root.querySelector("[data-date-format-input]");
+  const dateFormatPreview = root.querySelector("[data-date-format-preview]");
   const clockColorInput = root.querySelector("[data-clock-color-input]");
   const clockColorReset = root.querySelector("[data-clock-color-reset]");
   const blockForm = root.querySelector("[data-block-form]");
@@ -339,6 +355,15 @@ export function createSettingsPanel(root, options = {}) {
   nameInput.addEventListener("change", () => patchSettings({ name: nameInput.value }));
   nameInput.addEventListener("blur", () => patchSettings({ name: nameInput.value }));
 
+  dateFormatInput.addEventListener("input", () => {
+    renderDateFormatPreview(dateFormatInput.value);
+    window.clearTimeout(dateFormatSaveTimer);
+    const value = dateFormatInput.value;
+    dateFormatSaveTimer = window.setTimeout(() => patchSettings({ dateFormat: value }), 180);
+  });
+  dateFormatInput.addEventListener("change", () => patchSettings({ dateFormat: dateFormatInput.value }));
+  dateFormatInput.addEventListener("blur", () => patchSettings({ dateFormat: dateFormatInput.value }));
+
   clockColorInput.addEventListener("input", saveClockColor);
   clockColorInput.addEventListener("change", saveClockColor);
   clockColorReset.addEventListener("click", () => patchSettings({ clockColor: "" }));
@@ -415,6 +440,10 @@ export function createSettingsPanel(root, options = {}) {
     if (document.activeElement !== nameInput) {
       nameInput.value = settings.name;
     }
+    if (document.activeElement !== dateFormatInput) {
+      dateFormatInput.value = settings.dateFormat;
+    }
+    renderDateFormatPreview(dateFormatInput.value);
 
     clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[getSystemColorScheme()];
     clockColorReset.hidden = !settings.clockColor;
@@ -514,6 +543,7 @@ export function createSettingsPanel(root, options = {}) {
 
   async function patchSettings(patch) {
     window.clearTimeout(nameSaveTimer);
+    window.clearTimeout(dateFormatSaveTimer);
     settings = await saveSettings(patch);
     options.onAfterSave?.(settings);
     render(settings);
@@ -522,6 +552,11 @@ export function createSettingsPanel(root, options = {}) {
 
   function saveClockColor() {
     patchSettings({ clockColor: clockColorInput.value });
+  }
+
+  function renderDateFormatPreview(value) {
+    const format = value.trim() || DEFAULT_SETTINGS.dateFormat;
+    dateFormatPreview.value = formatDate(new Date(), format) || "(empty output)";
   }
 
   function getLocked() {

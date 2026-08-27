@@ -20,6 +20,8 @@ export const GADGET_SCALE_MIN = 1;
 export const GADGET_SCALE_MAX = 4;
 export const GADGET_SCALE_STEP = 0.01;
 export const CUSTOM_WAVE_CONFIG_MAX_LENGTH = 4096;
+export const DATE_FORMAT_MAX_LENGTH = 80;
+export const DEFAULT_DATE_FORMAT = "dddd, MMMM D";
 
 // Per-system-theme clock colour used when the user hasn't picked a custom one.
 export const DEFAULT_CLOCK_COLORS = Object.freeze({ dark: "#d7d7d7", light: "#252525" });
@@ -27,6 +29,7 @@ export const DEFAULT_CLOCK_COLORS = Object.freeze({ dark: "#d7d7d7", light: "#25
 export const DEFAULT_SETTINGS = Object.freeze({
   shape: "boxy",
   name: "Friend",
+  dateFormat: DEFAULT_DATE_FORMAT,
   hour24: false,
   showSeconds: true,
   showProgressBars: false,
@@ -149,6 +152,11 @@ export function normalizeSettings(settings = {}) {
   }
 
   normalized.name = String(normalized.name || DEFAULT_SETTINGS.name).trim() || DEFAULT_SETTINGS.name;
+  const dateFormat = String(normalized.dateFormat ?? "")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .trim()
+    .slice(0, DATE_FORMAT_MAX_LENGTH);
+  normalized.dateFormat = dateFormat || DEFAULT_DATE_FORMAT;
   normalized.hour24 = Boolean(normalized.hour24);
   normalized.showSeconds = Boolean(normalized.showSeconds);
   normalized.showProgressBars = Boolean(normalized.showProgressBars);

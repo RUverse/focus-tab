@@ -5,6 +5,7 @@ import {
   onSettingsChanged,
   pickRandom
 } from "./shared.js";
+import { formatDate } from "./date-format.js";
 
 const root = document.getElementById("newtab");
 const timeNode = document.getElementById("time");
@@ -216,7 +217,7 @@ function renderClock() {
   });
 
   greetingNode.textContent = `${getGreeting(rawHour)}, ${settings.name}`;
-  dateNode.textContent = `${now.getMonth() + 1}-${now.getDate()}-${now.getFullYear()}`;
+  dateNode.textContent = formatDate(now, settings.dateFormat);
 
   renderProgress(now);
 }

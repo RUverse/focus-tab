@@ -155,6 +155,29 @@ h1 {
   font-weight: 700;
 }
 
+.date-format-control {
+  display: grid;
+  gap: 5px;
+  width: 190px;
+}
+
+.date-format-control .setting-input {
+  width: 100%;
+}
+
+.date-format-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.4;
+}
+
+.date-format-help output {
+  color: var(--fg);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
 .custom-wave-editor {
   display: grid;
   gap: 8px;

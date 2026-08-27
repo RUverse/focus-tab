@@ -4,7 +4,7 @@
 
 inspired by WHA Quotes & Clock New Tab Clone (not maintained anymore)
 
-A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab extension. Its packaged runtime is dependency-free; development uses esbuild and the published `@ruverse/waves` package to bundle animated backgrounds.
+A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab extension. Its packaged runtime is self-contained and offline; development uses esbuild, the published `@ruverse/waves` package for animated backgrounds, and Moment.js for customizable date formatting.
 
 ## Features
 
@@ -16,7 +16,7 @@ A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab ex
 - Custom accent color, with a reset to the theme default
 - Optional progress bars for the day, month, and year
 - Optional new-tab gadgets: motivational quotes, fidget toys, and a sticky note list
-- Greeting and date
+- Greeting and date with a customizable Moment.js format
 - Rotating motivational quotes
 - **Focus mode**: a Focus button below the quote. Build a block list of sites. while focused those sites can't be opened and are redirected to this page instead.
 - **Distraction breaks**: from the focused view, open the break picker and drag
@@ -86,11 +86,11 @@ or other personal setting is sent over the network.
 ## Building from source (Chrome & Firefox)
 
 The published packages are produced from the source in this repository by
-`build.mjs`. Application source is copied verbatim except for the wave renderer
-and compact-config adapter, which are bundled from `@ruverse/waves`. The script
-also generates `manifest.json` for each target (the Firefox build swaps the
-background to module scripts and adds the `browser_specific_settings.gecko`
-block).
+`build.mjs`. Application source is copied verbatim except for the wave renderer,
+compact-config adapter, and Moment.js date formatter, which are bundled locally.
+The script also generates `manifest.json` for each target (the Firefox build
+swaps the background to module scripts and adds the
+`browser_specific_settings.gecko` block).
 
 ### Build environment
 
