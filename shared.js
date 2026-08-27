@@ -6,11 +6,11 @@ export const FIDGETS = ["off", "spinner", "clicky"];
 
 export const WAVE_BACKGROUNDS = [
   "off",
-  "random",
-  "quiet-current",
   "soft-arc",
-  "diagonal-drift",
-  "signal-bloom"
+  "glitched",
+  "mood",
+  "signal-bloom",
+  "custom"
 ];
 
 export const DISTRACTION_MIN_MINUTES = 1;
@@ -19,6 +19,7 @@ export const STICKY_NOTE_MAX_CHARS = 2000;
 export const GADGET_SCALE_MIN = 1;
 export const GADGET_SCALE_MAX = 4;
 export const GADGET_SCALE_STEP = 0.01;
+export const CUSTOM_WAVE_CONFIG_MAX_LENGTH = 4096;
 
 // Per-system-theme clock colour used when the user hasn't picked a custom one.
 export const DEFAULT_CLOCK_COLORS = Object.freeze({ dark: "#d7d7d7", light: "#252525" });
@@ -40,7 +41,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   stickyNoteListPos: null,
   gadgetScale: 1,
   motivationalQuoteEnabled: true,
-  waveBackground: "quiet-current",
+  waveBackground: "mood",
+  customWaveConfig: "",
   blockList: [],
   focusActive: false,
   distractionUntil: 0,
@@ -185,6 +187,9 @@ export function normalizeSettings(settings = {}) {
   if (!WAVE_BACKGROUNDS.includes(normalized.waveBackground)) {
     normalized.waveBackground = DEFAULT_SETTINGS.waveBackground;
   }
+  normalized.customWaveConfig = String(normalized.customWaveConfig ?? "")
+    .trim()
+    .slice(0, CUSTOM_WAVE_CONFIG_MAX_LENGTH);
 
   const hosts = Array.isArray(normalized.blockList) ? normalized.blockList : [];
   normalized.blockList = [...new Set(hosts.map(normalizeHost).filter(Boolean))];

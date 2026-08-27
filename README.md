@@ -10,7 +10,8 @@ A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab ex
 
 - Chrome new-tab override
 - Automatic light and dark modes that follow the operating system
-- Four deterministic animated wave backgrounds with Off, Random, and pinned-preset choices
+- Four curated animated wave backgrounds—Soft Arc, Glitched, Mood, and Signal
+  Bloom—with Off and Custom choices; Mood is the default
 - Live local clock with optional seconds and 24-hour format
 - Custom accent color, with a reset to the theme default
 - Optional progress bars for the day, month, and year
@@ -68,13 +69,28 @@ into pages and broad host access.
 
 The extension will replace Chrome's new tab page after it is loaded.
 
+## Custom wave backgrounds
+
+Choose **Custom waves** under **Background** in either settings surface, then
+paste a compact `waves:v1:` config copied from the Share menu at
+[waves.ruverse.ai](https://waves.ruverse.ai/) and press **Apply**. Focus Tab
+validates and stores the value locally, preserves the shared wave geometry and
+animation, and applies its own transparent background and light/dark wave color
+for readability. Invalid or unsupported values do not replace the active
+background.
+
+Custom config support requires the published `@ruverse/waves@^0.2.0` package.
+The codec and renderer are bundled into each extension target; no wave config
+or other personal setting is sent over the network.
+
 ## Building from source (Chrome & Firefox)
 
 The published packages are produced from the source in this repository by
-`build.mjs`. No source files are minified, transpiled, or concatenated; the
-script copies the JS/CSS/HTML verbatim and only generates `manifest.json` for
-each target (the Firefox build swaps the background to module scripts and adds
-the `browser_specific_settings.gecko` block).
+`build.mjs`. Application source is copied verbatim except for the wave renderer
+and compact-config adapter, which are bundled from `@ruverse/waves`. The script
+also generates `manifest.json` for each target (the Firefox build swaps the
+background to module scripts and adds the `browser_specific_settings.gecko`
+block).
 
 ### Build environment
 

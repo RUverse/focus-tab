@@ -1,5 +1,7 @@
 import {
+  CUSTOM_WAVE_CONFIG_MAX_LENGTH,
   DEFAULT_CLOCK_COLORS,
+  DEFAULT_SETTINGS,
   GADGET_SCALE_MAX,
   GADGET_SCALE_MIN,
   GADGET_SCALE_STEP,
@@ -9,6 +11,7 @@ import {
   normalizeHost,
   saveSettings
 } from "./shared.js";
+import { parseWaveConfig } from "./wave-config.js";
 
 export function createSettingsPanel(root, options = {}) {
   let settings = options.getSettings();
@@ -16,6 +19,19 @@ export function createSettingsPanel(root, options = {}) {
   let lastRemoved = null;
   let lockedRemoveHost = "";
   let nameSaveTimer = 0;
+  let customEditorOpen = settings.waveBackground === "custom";
+  let customWaveDraft = settings.customWaveConfig;
+  let customWaveStatus = "";
+  let customWaveStatusKind = "";
+
+  if (customEditorOpen) {
+    try {
+      customWaveDraft = parseWaveConfig(customWaveDraft).canonical;
+    } catch (error) {
+      customWaveStatus = savedCustomWaveError(error);
+      customWaveStatusKind = "error";
+    }
+  }
 
   root.innerHTML = `
     <div class="settings-tabs" role="tablist" aria-label="Settings sections">
@@ -91,15 +107,28 @@ export function createSettingsPanel(root, options = {}) {
       </div>
 
       <div class="setting-row">
-        <label class="setting-label" for="waveBackgroundSelect">Background waves</label>
+        <label class="setting-label" for="waveBackgroundSelect">Background</label>
         <select class="setting-input" id="waveBackgroundSelect" data-wave-background>
           <option value="off">Off</option>
-          <option value="random">Random</option>
-          <option value="quiet-current">Quiet Current</option>
           <option value="soft-arc">Soft Arc</option>
-          <option value="diagonal-drift">Diagonal Drift</option>
+          <option value="glitched">Glitched</option>
+          <option value="mood">Mood</option>
           <option value="signal-bloom">Signal Bloom</option>
+          <option value="custom">Custom waves</option>
         </select>
+      </div>
+
+      <div class="custom-wave-editor" data-custom-wave-editor hidden>
+        <label class="custom-wave-label" for="customWaveConfig">Custom wave config</label>
+        <textarea class="custom-wave-input" id="customWaveConfig" data-custom-wave-input rows="4" maxlength="${CUSTOM_WAVE_CONFIG_MAX_LENGTH}" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="customWaveHelp customWaveStatus" placeholder="waves:v1:{}"></textarea>
+        <p class="custom-wave-help" id="customWaveHelp">
+          Copy a compact config from the Share menu on
+          <a href="https://waves.ruverse.ai/" target="_blank" rel="noreferrer">Waves</a>.
+        </p>
+        <div class="custom-wave-actions">
+          <button type="button" class="custom-wave-apply" data-custom-wave-apply>Apply</button>
+          <p class="custom-wave-status" id="customWaveStatus" data-custom-wave-status role="status" aria-live="polite" hidden></p>
+        </div>
       </div>
     </section>
 
@@ -181,6 +210,10 @@ export function createSettingsPanel(root, options = {}) {
   const gadgetScaleInput = root.querySelector("[data-gadget-scale]");
   const gadgetScaleOutput = root.querySelector("[data-gadget-scale-output]");
   const waveBackgroundSelect = root.querySelector("[data-wave-background]");
+  const customWaveEditor = root.querySelector("[data-custom-wave-editor]");
+  const customWaveInput = root.querySelector("[data-custom-wave-input]");
+  const customWaveApply = root.querySelector("[data-custom-wave-apply]");
+  const customWaveStatusEl = root.querySelector("[data-custom-wave-status]");
   const colorSchemeQuery = window.matchMedia?.("(prefers-color-scheme: dark)");
 
   colorSchemeQuery?.addEventListener("change", () => {
@@ -213,11 +246,69 @@ export function createSettingsPanel(root, options = {}) {
     button.addEventListener("click", () => patchSettings({ shape: button.dataset.shape }));
   });
 
-  waveBackgroundSelect.addEventListener("change", () => {
+  waveBackgroundSelect.addEventListener("change", async () => {
     const value = WAVE_BACKGROUNDS.includes(waveBackgroundSelect.value)
       ? waveBackgroundSelect.value
-      : "quiet-current";
-    patchSettings({ waveBackground: value });
+      : DEFAULT_SETTINGS.waveBackground;
+
+    if (value === "custom") {
+      customEditorOpen = true;
+      customWaveDraft = settings.customWaveConfig;
+      customWaveStatus = "";
+      customWaveStatusKind = "";
+
+      try {
+        const parsed = parseCandidate(customWaveDraft);
+        customWaveDraft = parsed.canonical;
+        customWaveStatus = "Saved custom waves applied.";
+        customWaveStatusKind = "success";
+        renderCustomWaveEditor();
+        await patchSettings({
+          customWaveConfig: parsed.canonical,
+          waveBackground: "custom"
+        });
+      } catch (error) {
+        if (customWaveDraft) {
+          customWaveStatus = candidateError(error);
+          customWaveStatusKind = "error";
+        }
+        render();
+        customWaveInput.focus();
+      }
+      return;
+    }
+
+    customEditorOpen = false;
+    customWaveDraft = "";
+    customWaveStatus = "";
+    customWaveStatusKind = "";
+    await patchSettings({ waveBackground: value });
+  });
+
+  customWaveInput.addEventListener("input", () => {
+    customWaveDraft = customWaveInput.value;
+    customWaveStatus = "";
+    customWaveStatusKind = "";
+    renderCustomWaveEditor();
+  });
+
+  customWaveApply.addEventListener("click", async () => {
+    customWaveDraft = customWaveInput.value;
+
+    try {
+      const parsed = parseCandidate(customWaveDraft);
+      customWaveDraft = parsed.canonical;
+      customWaveStatus = "Custom waves applied.";
+      customWaveStatusKind = "success";
+      await patchSettings({
+        customWaveConfig: parsed.canonical,
+        waveBackground: "custom"
+      });
+    } catch (error) {
+      customWaveStatus = candidateError(error);
+      customWaveStatusKind = "error";
+      renderCustomWaveEditor();
+    }
   });
 
   root.querySelectorAll("[data-fidget]").forEach((button) => {
@@ -297,7 +388,19 @@ export function createSettingsPanel(root, options = {}) {
   });
 
   function render(nextSettings = settings) {
+    const wasCustom = settings.waveBackground === "custom";
     settings = nextSettings;
+
+    if (!wasCustom && settings.waveBackground === "custom" && !customEditorOpen) {
+      customEditorOpen = true;
+      customWaveDraft = settings.customWaveConfig;
+      try {
+        customWaveDraft = parseCandidate(customWaveDraft).canonical;
+      } catch (error) {
+        customWaveStatus = savedCustomWaveError(error);
+        customWaveStatusKind = "error";
+      }
+    }
 
     renderTabs();
     setActive("[data-progress]", (button) => (button.dataset.progress === "true") === settings.showProgressBars);
@@ -318,10 +421,24 @@ export function createSettingsPanel(root, options = {}) {
     gadgetScaleInput.value = String(settings.gadgetScale);
     gadgetScaleInput.setAttribute("aria-valuetext", formatScale(settings.gadgetScale));
     gadgetScaleOutput.value = formatScale(settings.gadgetScale);
-    waveBackgroundSelect.value = WAVE_BACKGROUNDS.includes(settings.waveBackground)
-      ? settings.waveBackground
-      : "quiet-current";
+    waveBackgroundSelect.value = customEditorOpen
+      ? "custom"
+      : WAVE_BACKGROUNDS.includes(settings.waveBackground)
+        ? settings.waveBackground
+        : DEFAULT_SETTINGS.waveBackground;
+    renderCustomWaveEditor();
     renderBlockList();
+  }
+
+  function renderCustomWaveEditor() {
+    customWaveEditor.hidden = !customEditorOpen;
+    if (document.activeElement !== customWaveInput) {
+      customWaveInput.value = customWaveDraft;
+    }
+    customWaveInput.setAttribute("aria-invalid", String(customWaveStatusKind === "error"));
+    customWaveStatusEl.textContent = customWaveStatus;
+    customWaveStatusEl.dataset.kind = customWaveStatusKind;
+    customWaveStatusEl.hidden = !customWaveStatus;
   }
 
   function renderTabs() {
@@ -438,4 +555,26 @@ export function createSettingsPanel(root, options = {}) {
 function formatScale(value) {
   const rounded = Math.round(Number(value) * 100) / 100;
   return `${rounded.toFixed(2).replace(/\.?0+$/, "")}x`;
+}
+
+function parseCandidate(candidate) {
+  if (candidate.length > CUSTOM_WAVE_CONFIG_MAX_LENGTH) {
+    throw new TypeError(`Wave config must be ${CUSTOM_WAVE_CONFIG_MAX_LENGTH} characters or fewer`);
+  }
+
+  const parsed = parseWaveConfig(candidate);
+  if (parsed.canonical.length > CUSTOM_WAVE_CONFIG_MAX_LENGTH) {
+    throw new TypeError(`Wave config must be ${CUSTOM_WAVE_CONFIG_MAX_LENGTH} characters or fewer`);
+  }
+  return parsed;
+}
+
+function candidateError(error) {
+  const detail = error instanceof Error ? error.message : "The value could not be decoded";
+  return `Could not apply custom waves. ${detail}.`;
+}
+
+function savedCustomWaveError(error) {
+  const detail = error instanceof Error ? error.message : "The value could not be decoded";
+  return `Saved custom waves are invalid. Mood is showing instead. ${detail}.`;
 }
