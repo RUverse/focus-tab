@@ -123,22 +123,12 @@ When the user asks to prepare a release:
   `dev`.
 - Open one release pull request from `dev` into `main`. Include accumulated
   user-visible changes, the version bump, and only verification actually run.
-  Leave it for review; do not merge unless the user explicitly asks.
-- After that pull request is merged, update local `main`, verify the three
-  version files again, and create an annotated tag on the merged `main` commit:
-
-  ```sh
-  git tag -a <version> -m "Release <version>"
-  git push origin <version>
-  ```
-
-- The tag must exactly match `manifest.json` without a `v` prefix. Its push
-  triggers `.github/workflows/release.yml`, which tests and builds both browser
-  packages, attests their provenance, and creates a draft GitHub Release with
-  both zip files attached.
-- Verify that the workflow was triggered and report its result. Do not publish
-  the draft release unless the user explicitly asks.
-- Provide copy-ready release notes based on user-visible changes since the
+  Wait for its required checks, then merge it. A request to prepare a release
+  authorizes merging this release pull request unless the user explicitly asks
+  to leave it for review.
+- After the pull request is merged, update local `main` and verify the three
+  version files again.
+- Prepare copy-ready release notes based on user-visible changes since the
   previous tag, with features before fixes and no empty section:
 
   ```markdown
@@ -150,3 +140,19 @@ When the user asks to prepare a release:
 
   - Fixed ...
   ```
+
+- Create an annotated tag on the merged `main` commit and push it:
+
+  ```sh
+  git tag -a <version> -m "Release <version>"
+  git push origin <version>
+  ```
+
+- The tag must exactly match `manifest.json` without a `v` prefix. Its push
+  triggers `.github/workflows/release.yml`, which tests and builds both browser
+  packages, attests their provenance, and creates a draft GitHub Release with
+  both zip files attached.
+- Verify that the workflow was triggered and report its result together with
+  the copy-ready release notes. Leave the draft unpublished so the maintainer
+  can paste the notes, review it, and publish it manually. Do not edit or
+  publish the draft unless the user explicitly asks.

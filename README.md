@@ -124,11 +124,12 @@ AMO; `dist/firefox/` contains the exact, human-readable files it holds.
 
 Releases are prepared on `dev` and moved to the release-only `main` branch by a
 release pull request. `npm version <version> --no-git-tag-version` synchronizes
-the npm and extension-manifest versions. After the release pull request is
-merged, an annotated numeric tag matching `manifest.json` triggers the GitHub
-Actions release workflow.
+the npm and extension-manifest versions before that pull request is merged.
+After the merge, release notes are prepared and an annotated numeric tag
+matching `manifest.json` triggers the GitHub Actions release workflow.
 
 The workflow builds and tests both extension targets, attests
 `dist/chrome.zip` and `dist/firefox.zip`, and attaches them to a draft GitHub
-Release. A maintainer reviews and publishes that draft manually. See
+Release. A maintainer pastes in the prepared release notes, reviews the draft,
+and publishes it manually. See
 [`AGENTS.md`](./AGENTS.md) for the complete release procedure.
