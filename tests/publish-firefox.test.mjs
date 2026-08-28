@@ -25,7 +25,12 @@ function testEnv() {
 
 function fakeReadFile(filePath) {
   if (filePath.endsWith("amo-metadata.json")) {
-    return JSON.stringify({ version: { release_notes: { "en-US": "Release notes" } } });
+    return JSON.stringify({
+      version: {
+        approval_notes: "Build with npm ci and npm run build.",
+        release_notes: { "en-US": "Release notes" },
+      },
+    });
   }
   if (filePath.endsWith("manifest.json")) {
     return JSON.stringify({
@@ -85,7 +90,10 @@ test("Firefox publishing validates the package, submits source, and applies rele
   assert.equal(calls[3].url, "https://addons.mozilla.org/api/v5/addons/addon/focus-clock%40paydargraphics/versions/");
   assert.equal(calls[3].options.body.get("upload"), "upload-uuid");
   assert.equal(calls[4].options.method, "PATCH");
-  assert.deepEqual(JSON.parse(calls[4].options.body), { release_notes: { "en-US": "Release notes" } });
+  assert.deepEqual(JSON.parse(calls[4].options.body), {
+    approval_notes: "Build with npm ci and npm run build.",
+    release_notes: { "en-US": "Release notes" },
+  });
   for (const call of calls) assert.match(call.options.headers.get("authorization"), /^JWT /);
 });
 

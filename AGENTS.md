@@ -162,6 +162,9 @@ When the user asks to prepare a release:
 - Publishing a stable GitHub Release triggers
   `.github/workflows/publish-stores.yml`. Prereleases do not submit store
   packages.
+- Store scripts are checked out from the release tag. Tags created before this
+  workflow and its scripts were introduced require manual store submission;
+  never move or recreate an existing release tag to add automation.
 - The store workflow rebuilds and tests the tagged commit, requires non-empty
   GitHub release notes, and preserves one verified set of artifacts for both
   store jobs.

@@ -135,5 +135,7 @@ and publishes it manually. Publishing a stable GitHub Release triggers a
 separate workflow that submits the matching packages to the Chrome Web Store
 and Firefox Add-ons for review. Approved Chrome submissions publish
 automatically; approved Firefox listed versions become public through AMO.
+Tags created before the store-publishing workflow was introduced must still be
+submitted to the browser stores manually.
 See
 [`AGENTS.md`](./AGENTS.md) for the complete release procedure.

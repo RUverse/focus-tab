@@ -52,7 +52,8 @@ async function readJsonResponse(response, operation) {
   }
 
   if (!response.ok) {
-    const detail = body?.error?.message || body?.raw || response.statusText || "Unknown error";
+    const apiError = typeof body?.error === "string" ? body.error : body?.error?.message;
+    const detail = body?.error_description || apiError || body?.raw || response.statusText || "Unknown error";
     throw new Error(`${operation} failed (${response.status}): ${detail}`);
   }
 
@@ -102,7 +103,7 @@ async function waitForUpload({ fetchImpl, statusUrl, headers, initialState, slee
     if (state === "FAILED") throw new Error("Chrome Web Store package validation failed.");
   }
 
-  throw new Error("Chrome Web Store package validation did not finish within two minutes.");
+  throw new Error("Chrome Web Store package validation did not finish within five minutes.");
 }
 
 export async function publishChrome({
@@ -111,7 +112,7 @@ export async function publishChrome({
   readFile = fs.readFile,
   sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
   nowSeconds = Math.floor(Date.now() / 1000),
-  maxPollAttempts = 24,
+  maxPollAttempts = 60,
   logger = console,
 } = {}) {
   if (typeof fetchImpl !== "function") throw new Error("A fetch implementation is required.");
@@ -124,11 +125,12 @@ export async function publishChrome({
   if (!/^[a-p]{32}$/.test(extensionId)) throw new Error("CHROME_EXTENSION_ID is malformed.");
   if (!/^\d+(?:\.\d+){0,3}$/.test(releaseVersion)) throw new Error("RELEASE_VERSION is malformed.");
 
+  const credentialsJson = requireString(env.CHROME_SERVICE_ACCOUNT_JSON, "CHROME_SERVICE_ACCOUNT_JSON");
   let credentials;
   try {
-    credentials = JSON.parse(requireString(env.CHROME_SERVICE_ACCOUNT_JSON, "CHROME_SERVICE_ACCOUNT_JSON"));
-  } catch (error) {
-    throw new Error(`CHROME_SERVICE_ACCOUNT_JSON is invalid JSON: ${error.message}`);
+    credentials = JSON.parse(credentialsJson);
+  } catch {
+    throw new Error("CHROME_SERVICE_ACCOUNT_JSON is not valid JSON.");
   }
 
   const token = await obtainAccessToken({ credentials, fetchImpl, nowSeconds });
@@ -181,7 +183,7 @@ export async function publishChrome({
     body: JSON.stringify({ publishType: "DEFAULT_PUBLISH" }),
   }, "Chrome Web Store submission");
 
-  const warnings = submission?.warningsInfo?.warnings || submission?.warnings || [];
+  const warnings = submission?.warningInfo?.warnings || [];
   for (const warning of warnings) {
     logger.warn(`Chrome Web Store warning: ${warning.description || warning.reason || "Unspecified warning"}`);
   }

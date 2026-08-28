@@ -48,12 +48,13 @@ test("service-account assertion has scoped, short-lived claims and a valid signa
 
 test("Chrome publishing authenticates, waits for validation, and requests default publishing", async () => {
   const calls = [];
+  const warnings = [];
   const responses = [
     jsonResponse({ access_token: "short-lived-token" }),
     jsonResponse({}),
     jsonResponse({ uploadState: "IN_PROGRESS" }),
     jsonResponse({ lastAsyncUploadState: "SUCCEEDED" }),
-    jsonResponse({}),
+    jsonResponse({ warningInfo: { warnings: [{ description: "Review warning" }] } }),
   ];
   const fetchImpl = async (url, options = {}) => {
     calls.push({ url, options });
@@ -66,7 +67,7 @@ test("Chrome publishing authenticates, waits for validation, and requests defaul
     readFile: async () => Buffer.from("extension archive"),
     sleep: async () => {},
     nowSeconds: 1_800_000_000,
-    logger: { info() {}, warn() {} },
+    logger: { info() {}, warn(message) { warnings.push(message); } },
   });
 
   assert.equal(calls.length, 5);
@@ -77,6 +78,7 @@ test("Chrome publishing authenticates, waits for validation, and requests defaul
   assert.equal(calls[4].url, "https://chromewebstore.googleapis.com/v2/publishers/4662d281-846f-457a-9f65-8fb18ca9f292/items/dhkapihaomieoiihekjdnncdekhmfgaj:publish");
   assert.equal(calls[2].options.headers.authorization, "Bearer short-lived-token");
   assert.deepEqual(JSON.parse(calls[4].options.body), { publishType: "DEFAULT_PUBLISH" });
+  assert.deepEqual(warnings, ["Chrome Web Store warning: Review warning"]);
 });
 
 test("Chrome publishing is a no-op when the release is already awaiting review", async () => {
@@ -118,4 +120,26 @@ test("Chrome publishing stops when package validation fails", async () => {
     readFile: async () => Buffer.from("extension archive"),
     logger: { info() {}, warn() {} },
   }), /package validation failed/);
+});
+
+test("Chrome authentication reports the OAuth error description", async () => {
+  await assert.rejects(() => publishChrome({
+    env: testEnv(),
+    fetchImpl: async () => jsonResponse({
+      error: "invalid_grant",
+      error_description: "Invalid JWT Signature.",
+    }, 400),
+    logger: { info() {}, warn() {} },
+  }), /Invalid JWT Signature/);
+});
+
+test("malformed Chrome credentials fail without echoing secret contents", async () => {
+  const env = { ...testEnv(), CHROME_SERVICE_ACCOUNT_JSON: "ghp_SUPERSECRET" };
+
+  await assert.rejects(() => publishChrome({ env }), (error) => {
+    assert.equal(error.message, "CHROME_SERVICE_ACCOUNT_JSON is not valid JSON.");
+    assert.equal(error.message.includes("ghp_SUPERSECRET"), false);
+    assert.equal(error.message.includes("ghp_SUPER"), false);
+    return true;
+  });
 });

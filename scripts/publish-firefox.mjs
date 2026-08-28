@@ -87,6 +87,7 @@ export async function publishFirefox({
   const metadata = JSON.parse(await readFile(metadataPath, "utf8"));
   const releaseNotes = metadata?.version?.release_notes;
   if (!releaseNotes?.["en-US"]) throw new Error("AMO metadata must contain English release notes.");
+  const approvalNotes = requireString(metadata?.version?.approval_notes, "AMO approval notes");
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
   const addonId = requireString(manifest?.browser_specific_settings?.gecko?.id, "Firefox manifest add-on ID");
   if (manifest.version !== releaseVersion) {
@@ -161,7 +162,7 @@ export async function publishFirefox({
   const updatedVersion = await request(versionUrl, {
     method: "PATCH",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ release_notes: releaseNotes }),
+    body: JSON.stringify({ approval_notes: approvalNotes, release_notes: releaseNotes }),
   }, "AMO release notes update");
   logger.info("AMO listed version is awaiting Mozilla review.");
 

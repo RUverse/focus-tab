@@ -12,6 +12,7 @@ export function createAmoMetadata(event) {
 
   return {
     version: {
+      approval_notes: "The attached source archive is the exact tagged source. Run npm ci and npm run build; see the Building from source section in README.md.",
       release_notes: {
         "en-US": releaseNotes,
       },

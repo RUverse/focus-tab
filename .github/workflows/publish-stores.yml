@@ -15,6 +15,7 @@ jobs:
   build:
     if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:
@@ -56,11 +57,13 @@ jobs:
             dist/focus-tab-*-source.zip
             dist/amo-metadata.json
           if-no-files-found: error
+          overwrite: true
           retention-days: 7
 
   publish-chrome:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:
@@ -87,6 +90,7 @@ jobs:
   publish-firefox:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
