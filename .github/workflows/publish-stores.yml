@@ -1,0 +1,117 @@
+name: Publish browser extensions to stores
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: publish-browser-stores
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Check release version and notes
+        env:
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          node -e 'const manifest = require("./manifest.json"); const pkg = require("./package.json"); if (process.env.RELEASE_VERSION !== manifest.version) throw new Error(`Release ${process.env.RELEASE_VERSION} does not match manifest ${manifest.version}`); if (pkg.version !== manifest.version) throw new Error(`package.json ${pkg.version} does not match manifest ${manifest.version}`)'
+          node scripts/prepare-amo-metadata.mjs
+
+      - name: Test and build extensions
+        run: |
+          npm test
+          npm run build
+
+      - name: Package human-readable source for Mozilla review
+        env:
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+        run: git archive --format=zip --output="dist/focus-tab-${RELEASE_VERSION}-source.zip" HEAD
+
+      - name: Preserve verified store packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: store-packages
+          path: |
+            dist/chrome.zip
+            dist/firefox
+            dist/firefox.zip
+            dist/focus-tab-*-source.zip
+            dist/amo-metadata.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
+
+  publish-chrome:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: store-packages
+          path: dist
+
+      - name: Submit Chrome package for review and automatic publishing
+        env:
+          CHROME_PUBLISHER_ID: ${{ vars.CHROME_PUBLISHER_ID }}
+          CHROME_EXTENSION_ID: ${{ vars.CHROME_EXTENSION_ID }}
+          CHROME_SERVICE_ACCOUNT_JSON: ${{ secrets.CHROME_SERVICE_ACCOUNT_JSON }}
+          CHROME_ZIP_PATH: dist/chrome.zip
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+        run: node scripts/publish-chrome.mjs
+
+  publish-firefox:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: store-packages
+          path: dist
+
+      - name: Submit Firefox package and source for review
+        env:
+          AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+          AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+          FIREFOX_ZIP_PATH: dist/firefox.zip
+          FIREFOX_SOURCE_PATH: dist/focus-tab-${{ github.event.release.tag_name }}-source.zip
+          AMO_METADATA_PATH: dist/amo-metadata.json
+          FIREFOX_MANIFEST_PATH: dist/firefox/manifest.json
+          RELEASE_VERSION: ${{ github.event.release.tag_name }}
+        run: node scripts/publish-firefox.mjs
