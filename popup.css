@@ -144,6 +144,70 @@ h1 {
   font-weight: 750;
 }
 
+.setting-label-with-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.info-tooltip {
+  position: relative;
+  display: inline-flex;
+}
+
+.info-tooltip-trigger {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  color: var(--muted);
+  cursor: help;
+}
+
+.info-tooltip-trigger svg {
+  width: 16px;
+  height: 16px;
+}
+
+.info-tooltip-trigger:hover,
+.info-tooltip-trigger:focus-visible {
+  color: var(--fg);
+}
+
+.info-tooltip-trigger:focus-visible {
+  outline: 2px solid #5277d4;
+  outline-offset: 2px;
+}
+
+.info-tooltip-content {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 5;
+  width: min(240px, calc(100vw - 48px));
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 9px 10px;
+  color: var(--fg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-40%, -3px);
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms;
+  visibility: hidden;
+}
+
+.info-tooltip:hover .info-tooltip-content,
+.info-tooltip:focus-within .info-tooltip-content {
+  opacity: 1;
+  transform: translate(-40%, 0);
+  visibility: visible;
+}
+
 .setting-input {
   width: 190px;
   min-height: 34px;
