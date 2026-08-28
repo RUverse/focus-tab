@@ -163,7 +163,21 @@ export function createSettingsPanel(root, options = {}) {
       <p class="modal-sub">Sites you add here can't be opened while you're focused.</p>
 
       <div class="setting-row">
-        <span class="setting-label">Break delay</span>
+        <span class="setting-label-with-info">
+          <span class="setting-label">Break delay</span>
+          <span class="info-tooltip">
+            <button type="button" class="info-tooltip-trigger" aria-label="About break delay" aria-describedby="breakDelayTooltip">
+              <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                <circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M10 8.7v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <circle cx="10" cy="5.9" r="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="info-tooltip-content" id="breakDelayTooltip" role="tooltip">
+              Adds a wait before each content break. The wait increases from 5 seconds to 10 minutes as you take more breaks that day.
+            </span>
+          </span>
+        </span>
         <div class="segmented" role="group" aria-label="Break delay">
           <button type="button" class="seg-button" data-break-delay="false">Off</button>
           <button type="button" class="seg-button" data-break-delay="true">On</button>
