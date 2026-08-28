@@ -156,3 +156,21 @@ When the user asks to prepare a release:
   the copy-ready release notes. Leave the draft unpublished so the maintainer
   can paste the notes, review it, and publish it manually. Do not edit or
   publish the draft unless the user explicitly asks.
+
+## Store publishing
+
+- Publishing a stable GitHub Release triggers
+  `.github/workflows/publish-stores.yml`. Prereleases do not submit store
+  packages.
+- The store workflow rebuilds and tests the tagged commit, requires non-empty
+  GitHub release notes, and preserves one verified set of artifacts for both
+  store jobs.
+- Chrome publishing uses the v2 Chrome Web Store API with `DEFAULT_PUBLISH`.
+  It submits the package for review and publishes it automatically after
+  approval. Keep `CHROME_PUBLISHER_ID` and `CHROME_EXTENSION_ID` in repository
+  variables and `CHROME_SERVICE_ACCOUNT_JSON` in Actions secrets.
+- Firefox publishing uses the authenticated AMO v5 submission API, includes
+  the GitHub release notes, and uploads a human-readable source archive for
+  review. Keep `AMO_JWT_ISSUER` and `AMO_JWT_SECRET` in Actions secrets.
+- Never print, persist, upload as artifacts, or commit store credentials. Store
+  submission failures must leave the other store job independently retryable.
