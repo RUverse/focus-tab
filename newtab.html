@@ -13,6 +13,7 @@
     <script type="module" src="focus.js"></script>
     <script type="module" src="fidget.js"></script>
     <script type="module" src="sticky-note.js"></script>
+    <script type="module" src="pomodoro.js"></script>
   </head>
   <body>
     <main class="newtab" id="newtab" aria-live="polite">
@@ -107,11 +108,48 @@
         <div class="sticky-note-content" id="stickyNoteContent" role="textbox" aria-label="Sticky note list" aria-multiline="true" contenteditable="plaintext-only" spellcheck="false"></div>
       </div>
 
-      <button type="button" class="gear-button" id="gearButton" aria-label="Edit block list" title="Edit block list">
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-          <path fill="currentColor" d="M19.14 12.94a7.6 7.6 0 0 0 .05-.94 7.6 7.6 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.62l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54a7.2 7.2 0 0 0-1.62.94l-2.39-.96a.5.5 0 0 0-.6.22L2.78 8.86a.5.5 0 0 0 .12.62l2.03 1.58a7.6 7.6 0 0 0 0 1.88L2.9 14.52a.5.5 0 0 0-.12.62l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.38 1.04.7 1.62.94l.36 2.54a.5.5 0 0 0 .5.42h3.84a.5.5 0 0 0 .5-.42l.36-2.54c.58-.24 1.12-.56 1.62-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.62l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/>
-        </svg>
-      </button>
+      <section class="pomodoro ui-panel" id="pomodoro" aria-label="Pomodoro timer" aria-live="off" hidden>
+        <button type="button" class="pomodoro-handle" id="pomodoroHandle" aria-label="Move Pomodoro timer. Use arrow keys to move." title="Drag to move, or use arrow keys"></button>
+        <div class="pomodoro-phases" role="group" aria-label="Pomodoro interval">
+          <button type="button" data-pomodoro-phase="focus" aria-pressed="true">Focus · 25m</button>
+          <button type="button" data-pomodoro-phase="break" aria-pressed="false">Break · 5m</button>
+        </div>
+        <div class="pomodoro-time" id="pomodoroTime" role="timer" aria-live="off">25:00</div>
+        <p class="pomodoro-status" id="pomodoroStatus" role="status" aria-live="polite">Ready to focus</p>
+        <div class="pomodoro-actions">
+          <button type="button" id="pomodoroToggle">Start</button>
+          <button type="button" id="pomodoroReset">Reset</button>
+        </div>
+      </section>
+
+      <div class="gadget-toolbar" role="group" aria-label="Gadget visibility and settings">
+        <button type="button" class="gadget-toggle" data-gadget-toggle="fidget" aria-label="Fidget" aria-controls="fidget" aria-pressed="true" title="Hide fidget" hidden>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="6.5" r="3.2"/>
+            <circle cx="16.8" cy="15" r="3.2"/>
+            <circle cx="7.2" cy="15" r="3.2"/>
+            <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>
+          </svg>
+        </button>
+        <!-- Tabler Icons (MIT): note and hourglass-empty. See icons/LICENSE-tabler.txt. -->
+        <button type="button" class="gadget-toggle" data-gadget-toggle="stickyNoteList" aria-label="Sticky note" aria-controls="stickyNoteList" aria-pressed="true" title="Hide sticky note" hidden>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 20l7 -7"/>
+            <path d="M13 20v-6a1 1 0 0 1 1 -1h6v-7a2 2 0 0 0 -2 -2h-12a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7"/>
+          </svg>
+        </button>
+        <button type="button" class="gadget-toggle" data-gadget-toggle="pomodoro" aria-label="Pomodoro" aria-controls="pomodoro" aria-pressed="true" title="Hide Pomodoro" hidden>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1"/>
+            <path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1"/>
+          </svg>
+        </button>
+        <button type="button" class="gear-button" id="gearButton" aria-label="Settings" title="Settings">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M19.14 12.94a7.6 7.6 0 0 0 .05-.94 7.6 7.6 0 0 0-.05-.94l2.03-1.58a.5.5 0 0 0 .12-.62l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54a7.2 7.2 0 0 0-1.62.94l-2.39-.96a.5.5 0 0 0-.6.22L2.78 8.86a.5.5 0 0 0 .12.62l2.03 1.58a7.6 7.6 0 0 0 0 1.88L2.9 14.52a.5.5 0 0 0-.12.62l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.38 1.04.7 1.62.94l.36 2.54a.5.5 0 0 0 .5.42h3.84a.5.5 0 0 0 .5-.42l.36-2.54c.58-.24 1.12-.56 1.62-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.62l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/>
+          </svg>
+        </button>
+      </div>
     </main>
 
     <div class="modal-backdrop" id="blockModal" hidden>

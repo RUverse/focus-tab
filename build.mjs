@@ -31,6 +31,7 @@ const ASSETS = [
   "meditation.js",
   "newtab.js",
   "sticky-note.js",
+  "pomodoro.js",
   "popup.js",
   "settings-panel.js",
   "shared.js",
