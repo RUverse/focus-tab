@@ -28,6 +28,7 @@ const ASSETS = [
   "background.js",
   "fidget.js",
   "focus.js",
+  "meditation.js",
   "newtab.js",
   "sticky-note.js",
   "popup.js",
@@ -36,6 +37,7 @@ const ASSETS = [
   "newtab.html",
   "popup.html",
   "newtab.css",
+  "ui-shape.css",
   "popup.css",
   "icons",
 ];

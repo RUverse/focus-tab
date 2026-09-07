@@ -1,0 +1,26 @@
+/* Shared defaults for every UI surface. Component rules may override these
+   low-specificity defaults for circles, pills, or other intentional geometry. */
+:root {
+  --control-radius: 0px;
+  --panel-radius: 0px;
+}
+
+.shape-round {
+  --control-radius: 20px;
+  --panel-radius: 32px;
+}
+
+:where(button, select, textarea, input:not([type="radio"]):not([type="checkbox"]),
+  label > input[type="radio"] + span, .custom-wave-editor, .block-list li,
+  .ui-control) {
+  border-radius: var(--control-radius);
+}
+
+:where(dialog, .modal, .ui-panel) {
+  border-radius: var(--panel-radius);
+}
+
+/* Joined controls get their silhouette from the containing group. */
+:where(.segmented, .settings-tabs) > button {
+  border-radius: 0;
+}

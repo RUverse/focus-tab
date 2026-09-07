@@ -1425,10 +1425,6 @@ button {
   -webkit-text-stroke: 0.02em currentColor;
 }
 
-.shape-round .modal {
-  border-radius: 32px;
-}
-
 .shape-round .settings-tabs,
 .shape-round .segmented {
   border-radius: 999px;
@@ -1437,21 +1433,6 @@ button {
 
 .shape-round .select-chevron {
   right: 16px;
-}
-
-.shape-round .setting-input,
-.shape-round .color-input,
-.shape-round .custom-wave-editor,
-.shape-round .custom-wave-input,
-.shape-round .custom-wave-apply,
-.shape-round .block-add input,
-.shape-round .block-add button,
-.shape-round .block-list li,
-.shape-round .modal-actions .primary,
-.shape-round .modal-actions .ghost,
-.shape-round .break-choice,
-.shape-round .reason-input {
-  border-radius: 20px;
 }
 
 .shape-round .color-input {
@@ -1501,5 +1482,140 @@ button {
   .fidget {
     bottom: 88px;
     left: 20px;
+  }
+}
+
+/* Native dialog keeps meditation keyboard focus contained. */
+.meditation-modal {
+  --meditation-ink: #ededed;
+  --meditation-muted: #aaa;
+  --meditation-border: #555;
+  color: var(--meditation-ink);
+  gap: 24px;
+}
+
+.meditation-modal:not([open]),
+.meditation-modal [hidden] {
+  display: none;
+}
+
+.meditation-modal::backdrop {
+  background: rgb(0 0 0 / 62%);
+}
+
+.meditation-sub {
+  margin: 0;
+  color: var(--meditation-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.meditation-durations {
+  display: flex;
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.meditation-durations legend {
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+}
+
+.meditation-durations label {
+  flex: 1;
+  position: relative;
+  cursor: pointer;
+}
+
+.meditation-durations input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.meditation-durations span {
+  display: block;
+  padding: 14px 4px;
+  border: 1px solid var(--meditation-border);
+  text-align: center;
+}
+
+.meditation-durations input:checked + span {
+  background: var(--meditation-ink);
+  color: #111;
+  border-color: var(--meditation-ink);
+}
+
+.meditation-modal :focus-visible,
+.meditation-durations input:focus-visible + span {
+  outline: 2px solid var(--meditation-ink);
+  outline-offset: 4px;
+}
+
+.meditation-session {
+  text-align: center;
+}
+
+.meditation-orbit {
+  width: min(260px, 100%);
+  aspect-ratio: 1;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+}
+
+.meditation-particles {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+.meditation-particles span {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.meditation-instruction {
+  margin: 0 0 10px;
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.meditation-modal .ghost {
+  color: var(--meditation-ink);
+  border-color: var(--meditation-border);
+}
+
+@media (prefers-color-scheme: light) {
+  .meditation-modal {
+    --meditation-ink: #242424;
+    --meditation-muted: #606060;
+    --meditation-border: #aaa;
+    background: #fafafa;
+    border-color: #ddd;
+  }
+
+  .meditation-durations input:checked + span,
+  .meditation-modal .primary {
+    background: #242424;
+    color: #fafafa;
+    border-color: #242424;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meditation-particles {
+    will-change: auto;
   }
 }
