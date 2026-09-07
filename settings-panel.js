@@ -3,9 +3,9 @@ import {
   DATE_FORMAT_MAX_LENGTH,
   DEFAULT_CLOCK_COLORS,
   DEFAULT_SETTINGS,
-  GADGET_SCALE_MAX,
-  GADGET_SCALE_MIN,
-  GADGET_SCALE_STEP,
+  FIDGET_SCALE_MAX,
+  FIDGET_SCALE_MIN,
+  FIDGET_SCALE_STEP,
   WAVE_BACKGROUNDS,
   getFocusState,
   getSystemColorScheme,
@@ -220,10 +220,18 @@ export function createSettingsPanel(root, options = {}) {
       </div>
 
       <div class="setting-row">
-        <span class="setting-label">Gadget scale</span>
+        <span class="setting-label">Pomodoro</span>
+        <div class="segmented" role="group" aria-label="Pomodoro">
+          <button type="button" class="seg-button" data-pomodoro="false">Off</button>
+          <button type="button" class="seg-button" data-pomodoro="true">On</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <span class="setting-label">Fidget scale</span>
         <div class="range-control">
-          <input class="range-input" data-gadget-scale type="range" min="${GADGET_SCALE_MIN}" max="${GADGET_SCALE_MAX}" step="${GADGET_SCALE_STEP}" aria-label="Gadget scale">
-          <output class="range-value" data-gadget-scale-output>1x</output>
+          <input class="range-input" data-fidget-scale type="range" min="${FIDGET_SCALE_MIN}" max="${FIDGET_SCALE_MAX}" step="${FIDGET_SCALE_STEP}" aria-label="Fidget scale">
+          <output class="range-value" data-fidget-scale-output>2x</output>
         </div>
       </div>
     </section>
@@ -241,8 +249,8 @@ export function createSettingsPanel(root, options = {}) {
   const blockList = root.querySelector("[data-block-list]");
   const blockEmpty = root.querySelector("[data-block-empty]");
   const blockUndo = root.querySelector("[data-block-undo]");
-  const gadgetScaleInput = root.querySelector("[data-gadget-scale]");
-  const gadgetScaleOutput = root.querySelector("[data-gadget-scale-output]");
+  const fidgetScaleInput = root.querySelector("[data-fidget-scale]");
+  const fidgetScaleOutput = root.querySelector("[data-fidget-scale-output]");
   const waveBackgroundSelect = root.querySelector("[data-wave-background]");
   const customWaveEditor = root.querySelector("[data-custom-wave-editor]");
   const customWaveInput = root.querySelector("[data-custom-wave-input]");
@@ -346,19 +354,23 @@ export function createSettingsPanel(root, options = {}) {
   });
 
   root.querySelectorAll("[data-fidget]").forEach((button) => {
-    button.addEventListener("click", () => patchSettings({ fidget: button.dataset.fidget }));
+    button.addEventListener("click", () => patchSettings({ fidget: button.dataset.fidget, fidgetHidden: false }));
   });
 
   root.querySelectorAll("[data-sticky-note-list]").forEach((button) => {
-    button.addEventListener("click", () => patchSettings({ stickyNoteListEnabled: button.dataset.stickyNoteList === "true" }));
+    button.addEventListener("click", () => patchSettings({ stickyNoteListEnabled: button.dataset.stickyNoteList === "true", stickyNoteListHidden: false }));
   });
 
   root.querySelectorAll("[data-motivational-quote]").forEach((button) => {
     button.addEventListener("click", () => patchSettings({ motivationalQuoteEnabled: button.dataset.motivationalQuote === "true" }));
   });
 
-  gadgetScaleInput.addEventListener("input", () => {
-    patchSettings({ gadgetScale: Number(gadgetScaleInput.value) });
+  root.querySelectorAll("[data-pomodoro]").forEach((button) => {
+    button.addEventListener("click", () => patchSettings({ pomodoroEnabled: button.dataset.pomodoro === "true", pomodoroHidden: false }));
+  });
+
+  fidgetScaleInput.addEventListener("input", () => {
+    patchSettings({ fidgetScale: Number(fidgetScaleInput.value) });
   });
 
   root.querySelectorAll("[data-break-delay]").forEach((button) => {
@@ -465,9 +477,10 @@ export function createSettingsPanel(root, options = {}) {
 
     clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[getSystemColorScheme()];
     clockColorReset.hidden = !settings.clockColor;
-    gadgetScaleInput.value = String(settings.gadgetScale);
-    gadgetScaleInput.setAttribute("aria-valuetext", formatScale(settings.gadgetScale));
-    gadgetScaleOutput.value = formatScale(settings.gadgetScale);
+    setActive("[data-pomodoro]", (button) => (button.dataset.pomodoro === "true") === settings.pomodoroEnabled);
+    fidgetScaleInput.value = String(settings.fidgetScale);
+    fidgetScaleInput.setAttribute("aria-valuetext", formatScale(settings.fidgetScale));
+    fidgetScaleOutput.value = formatScale(settings.fidgetScale);
     waveBackgroundSelect.value = customEditorOpen
       ? "custom"
       : WAVE_BACKGROUNDS.includes(settings.waveBackground)

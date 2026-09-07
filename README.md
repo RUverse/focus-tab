@@ -15,7 +15,7 @@ A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab ex
 - Live local clock with optional seconds and 24-hour format
 - Custom accent color, with a reset to the theme default
 - Optional progress bars for the day, month, and year
-- Optional new-tab gadgets: motivational quotes, fidget toys, and a sticky note list
+- Optional new-tab gadgets: motivational quotes, fidget toys, a sticky note list, and a Pomodoro timer
 - Greeting and date with a customizable Moment.js format
 - Rotating motivational quotes
 - **Focus mode**: a Focus button below the quote. Build a block list of sites. while focused those sites can't be opened and are redirected to this page instead.
@@ -58,6 +58,24 @@ into pages and broad host access.
 - Starting a break sets `distractionUntil`; the background worker drops the
   blocking rules until it elapses, then restores them automatically.
 - Clicking **Focus** during a break ends it early and resumes blocking.
+
+Spinner, sticky note, and Pomodoro are enabled but hidden by default.
+Use their bottom icons to show them. Enabled gadgets have visibility buttons beside
+the settings gear. Click an icon to hide or show its gadget. Visibility is saved
+without clearing gadget content, position, or timer state.
+
+**Fidget scale** defaults to 2× and changes only the fidget size. Sticky notes
+and Pomodoro stay at 1×. Their text stays fully visible while borders and move
+handles brighten on hover or keyboard focus.
+
+## Pomodoro gadget
+
+Enable **Pomodoro** in **Settings → Gadgets** for 25-minute focus intervals and
+5-minute breaks. Start or pause the timer, reset the current interval, or select
+Focus/Break to switch. Each completed interval cues the next one; press Start
+when ready. The timer survives reloads and stays in sync across new tabs. Drag
+its line handle (or use arrow keys while the handle is focused) to move it.
+The timer works independently of website blocking.
 
 ## Install locally
 

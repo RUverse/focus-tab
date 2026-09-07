@@ -1,13 +1,15 @@
 import {
   QUOTES,
-  applyGadgetScaleStyles,
+  applyFidgetScaleStyles,
   loadSettings,
   onSettingsChanged,
-  pickRandom
+  pickRandom,
+  saveSettings
 } from "./shared.js";
 import { formatDate } from "./date-format.js";
 
 const root = document.getElementById("newtab");
+const gadgetToggles = [...document.querySelectorAll("[data-gadget-toggle]")];
 const timeNode = document.getElementById("time");
 const greetingNode = document.getElementById("greeting");
 const dateNode = document.getElementById("date");
@@ -39,7 +41,7 @@ document.addEventListener("keydown", (event) => {
     target instanceof HTMLTextAreaElement ||
     (target instanceof HTMLElement && target.isContentEditable);
 
-  if (isTyping || event.metaKey || event.ctrlKey || event.altKey) {
+  if (event.defaultPrevented || isTyping || target.closest?.('button, a, select, [role="button"]') || event.metaKey || event.ctrlKey || event.altKey) {
     return;
   }
 
@@ -48,6 +50,32 @@ document.addEventListener("keydown", (event) => {
     rotateQuote();
   }
 });
+
+gadgetToggles.forEach((button) => {
+  button.addEventListener("click", async () => {
+    const key = `${button.dataset.gadgetToggle}Hidden`;
+    button.disabled = true;
+    try {
+      const current = await loadSettings();
+      settings = await saveSettings({ [key]: !current[key] });
+      renderGadgetToggles();
+    } catch {
+      button.title = "Could not save visibility. Please try again.";
+    } finally {
+      button.disabled = false;
+    }
+  });
+});
+
+function renderGadgetToggles() {
+  gadgetToggles.forEach((button) => {
+    const gadget = button.dataset.gadgetToggle;
+    button.hidden = gadget === "fidget" ? settings.fidget === "off" : !settings[`${gadget}Enabled`];
+    const visible = !settings[`${gadget}Hidden`];
+    button.setAttribute("aria-pressed", String(visible));
+    button.title = `${visible ? "Hide" : "Show"} ${button.getAttribute("aria-label")}`;
+  });
+}
 
 onSettingsChanged((nextSettings) => {
   settings = nextSettings;
@@ -172,12 +200,13 @@ function focusTab(tab) {
 }
 
 function render() {
+  renderGadgetToggles();
   renderMode();
   renderClock();
 }
 
 function renderMode() {
-  applyGadgetScaleStyles(root, settings.gadgetScale);
+  applyFidgetScaleStyles(root, settings.fidgetScale);
 
   // Shape applies to the whole document (incl. modals, which live outside #newtab),
   // so the round-corner styles hang off <body> rather than the page root.

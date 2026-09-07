@@ -16,9 +16,9 @@ export const WAVE_BACKGROUNDS = [
 export const DISTRACTION_MIN_MINUTES = 1;
 export const DISTRACTION_MAX_MINUTES = 240;
 export const STICKY_NOTE_MAX_CHARS = 2000;
-export const GADGET_SCALE_MIN = 1;
-export const GADGET_SCALE_MAX = 4;
-export const GADGET_SCALE_STEP = 0.01;
+export const FIDGET_SCALE_MIN = 1;
+export const FIDGET_SCALE_MAX = 4;
+export const FIDGET_SCALE_STEP = 0.01;
 export const CUSTOM_WAVE_CONFIG_MAX_LENGTH = 4096;
 export const DATE_FORMAT_MAX_LENGTH = 80;
 export const DEFAULT_DATE_FORMAT = "dddd, MMMM D";
@@ -34,15 +34,21 @@ export const DEFAULT_SETTINGS = Object.freeze({
   showSeconds: true,
   showProgressBars: false,
   clockColor: "",
-  fidget: "off",
+  fidget: "spinner",
   // Where the user last dropped the fidget ({ x, y } in px from the top-left),
   // or null for the default bottom-left spot.
   fidgetPos: null,
-  stickyNoteListEnabled: false,
+  fidgetHidden: true,
+  stickyNoteListEnabled: true,
+  stickyNoteListHidden: true,
   stickyNoteListText: "",
   // Where the user last dropped the sticky note list, or null for its default spot.
   stickyNoteListPos: null,
-  gadgetScale: 1,
+  pomodoroEnabled: true,
+  pomodoroHidden: true,
+  pomodoroPos: null,
+  pomodoro: { phase: "focus", remainingMs: 25 * 60 * 1000, endsAt: 0 },
+  fidgetScale: 2,
   motivationalQuoteEnabled: true,
   waveBackground: "mood",
   customWaveConfig: "",
@@ -175,6 +181,10 @@ export function normalizeSettings(settings = {}) {
       ? { x: Number(pos.x), y: Number(pos.y) }
       : null;
 
+  for (const key of ["fidgetHidden", "stickyNoteListHidden", "pomodoroHidden"]) {
+    normalized[key] = normalized[key] === true;
+  }
+
   normalized.stickyNoteListEnabled = Boolean(normalized.stickyNoteListEnabled);
   normalized.stickyNoteListText = String(normalized.stickyNoteListText || "")
     .replace(/\r\n?/g, "\n")
@@ -185,10 +195,18 @@ export function normalizeSettings(settings = {}) {
       ? { x: Number(stickyPos.x), y: Number(stickyPos.y) }
       : null;
 
-  const gadgetScale = Number(normalized.gadgetScale);
-  normalized.gadgetScale = Number.isFinite(gadgetScale)
-    ? normalizeGadgetScale(gadgetScale)
-    : DEFAULT_SETTINGS.gadgetScale;
+  normalized.pomodoroEnabled = normalized.pomodoroEnabled === true;
+  normalized.pomodoro = normalizePomodoro(normalized.pomodoro);
+  const pomodoroPos = normalized.pomodoroPos;
+  normalized.pomodoroPos = pomodoroPos && Number.isFinite(pomodoroPos.x) && Number.isFinite(pomodoroPos.y)
+    ? { x: pomodoroPos.x, y: pomodoroPos.y } : null;
+
+  // Preserve the previous scale preference for fidgets only.
+  const fidgetScale = Number(settings?.fidgetScale ?? settings?.gadgetScale ?? DEFAULT_SETTINGS.fidgetScale);
+  delete normalized.gadgetScale;
+  normalized.fidgetScale = Number.isFinite(fidgetScale)
+    ? normalizeFidgetScale(fidgetScale)
+    : DEFAULT_SETTINGS.fidgetScale;
 
   normalized.motivationalQuoteEnabled = normalized.motivationalQuoteEnabled !== false;
 
@@ -225,14 +243,14 @@ export function normalizeSettings(settings = {}) {
   return normalized;
 }
 
-export function normalizeGadgetScale(value) {
+export function normalizeFidgetScale(value) {
   const scale = Number(value);
   if (!Number.isFinite(scale)) {
-    return DEFAULT_SETTINGS.gadgetScale;
+    return DEFAULT_SETTINGS.fidgetScale;
   }
 
-  const clamped = Math.min(GADGET_SCALE_MAX, Math.max(GADGET_SCALE_MIN, scale));
-  return Number((Math.round(clamped / GADGET_SCALE_STEP) * GADGET_SCALE_STEP).toFixed(2));
+  const clamped = Math.min(FIDGET_SCALE_MAX, Math.max(FIDGET_SCALE_MIN, scale));
+  return Number((Math.round(clamped / FIDGET_SCALE_STEP) * FIDGET_SCALE_STEP).toFixed(2));
 }
 
 export function getSystemColorScheme() {
@@ -243,50 +261,14 @@ export function getSystemColorScheme() {
     : "light";
 }
 
-export function applyGadgetScaleStyles(root, value) {
+export function applyFidgetScaleStyles(root, value) {
   if (!root) {
     return;
   }
 
-  const scale = normalizeGadgetScale(value);
-  const compact = typeof window !== "undefined" && window.matchMedia("(max-width: 560px)").matches;
-  const stickyBase = compact
-    ? { width: 220, minHeight: 104, bottom: 216, left: 20, horizontalMargin: 40 }
-    : { width: 240, minHeight: 116, bottom: 240, left: 46, horizontalMargin: 92 };
-
-  const pixelVars = {
-    "--fidget-size": 72 * scale,
-    "--fidget-spinner-size": 112 * scale,
-    "--sticky-note-width": stickyBase.width * scale,
-    "--sticky-note-min-height": stickyBase.minHeight * scale,
-    "--sticky-note-content-min-height": 112 * scale,
-    "--sticky-note-bottom": stickyBase.bottom,
-    "--sticky-note-left": stickyBase.left,
-    "--sticky-note-horizontal-margin": stickyBase.horizontalMargin,
-    "--sticky-note-border-width": 2 * scale,
-    "--sticky-note-radius": 18 * scale,
-    "--sticky-note-handle-top": 7 * scale,
-    "--sticky-note-handle-width": 86 * scale,
-    "--sticky-note-handle-height": 18 * scale,
-    "--sticky-note-handle-bar-top": 7 * scale,
-    "--sticky-note-handle-bar-width": 80 * scale,
-    "--sticky-note-handle-bar-height": 3 * scale,
-    "--sticky-note-padding-top": 26 * scale,
-    "--sticky-note-padding-x": 12 * scale,
-    "--sticky-note-padding-bottom": 12 * scale
-  };
-
-  Object.entries(pixelVars).forEach(([name, number]) => {
-    root.style.setProperty(name, `${roundCssValue(number)}px`);
-  });
-
-  root.style.setProperty(
-    "--sticky-note-max-height",
-    compact
-      ? `${roundCssValue(28 * scale)}vh`
-      : `min(${roundCssValue(260 * scale)}px, ${roundCssValue(36 * scale)}vh)`
-  );
-  root.style.setProperty("--sticky-note-font-size", `${roundCssValue(0.88 * scale)}rem`);
+  const scale = normalizeFidgetScale(value);
+  root.style.setProperty("--fidget-size", `${roundCssValue(72 * scale)}px`);
+  root.style.setProperty("--fidget-spinner-size", `${roundCssValue(112 * scale)}px`);
 }
 
 function roundCssValue(value) {
@@ -335,6 +317,31 @@ export function isBlockingActive(settings, now = Date.now()) {
   return getFocusState(settings, now) === "focused" && settings.blockList.length > 0;
 }
 
+export function pomodoroDuration(phase) {
+  return (phase === "break" ? 5 : 25) * 60 * 1000;
+}
+
+export function normalizePomodoro(value) {
+  const phase = value?.phase === "break" ? "break" : "focus";
+  const duration = pomodoroDuration(phase);
+  const remainingMs = Number.isFinite(value?.remainingMs) && value.remainingMs > 0
+    ? Math.min(duration, value.remainingMs) : duration;
+  const endsAt = Number.isSafeInteger(value?.endsAt) && value.endsAt > 0 ? value.endsAt : 0;
+  return { phase, remainingMs, endsAt };
+}
+
+// Use a deadline so suspended or closed tabs do not slow the countdown. The
+// following interval waits for Start; reading completion never writes storage.
+export function getPomodoroState(value, now = Date.now()) {
+  const state = normalizePomodoro(value);
+  if (!state.endsAt) return state;
+  if (state.endsAt > now) {
+    return { ...state, remainingMs: Math.min(pomodoroDuration(state.phase), state.endsAt - now) };
+  }
+  const phase = state.phase === "focus" ? "break" : "focus";
+  return { phase, remainingMs: pomodoroDuration(phase), endsAt: 0 };
+}
+
 export async function loadSettings() {
   if (hasChromeStorage()) {
     return new Promise((resolve) => {
@@ -379,6 +386,12 @@ export function onSettingsChanged(callback) {
     });
     return;
   }
+
+  window.addEventListener("storage", (event) => {
+    if (event.key === STORAGE_KEY || event.key === null) {
+      loadSettings().then(callback);
+    }
+  });
 
   window.addEventListener("wha-settings-changed", (event) => {
     callback(normalizeSettings(event.detail));

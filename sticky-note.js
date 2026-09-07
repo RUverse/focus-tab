@@ -1,6 +1,5 @@
-import { STICKY_NOTE_MAX_CHARS, applyGadgetScaleStyles, loadSettings, onSettingsChanged, saveSettings } from "./shared.js";
+import { STICKY_NOTE_MAX_CHARS, loadSettings, onSettingsChanged, saveSettings } from "./shared.js";
 
-const root = document.getElementById("newtab");
 const noteEl = document.getElementById("stickyNoteList");
 const handleEl = document.getElementById("stickyNoteHandle");
 const contentEl = document.getElementById("stickyNoteContent");
@@ -28,8 +27,7 @@ handleEl.addEventListener("pointerdown", onHandlePointerDown);
 window.addEventListener("resize", onViewportResize);
 
 function render() {
-  applyGadgetScaleStyles(root, settings.gadgetScale);
-  noteEl.hidden = !settings.stickyNoteListEnabled;
+  noteEl.hidden = !settings.stickyNoteListEnabled || settings.stickyNoteListHidden;
 
   if (document.activeElement !== contentEl) {
     contentEl.textContent = settings.stickyNoteListText;
@@ -41,7 +39,6 @@ function render() {
 }
 
 function onViewportResize() {
-  applyGadgetScaleStyles(root, settings.gadgetScale);
   applyPosition();
 }
 
