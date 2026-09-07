@@ -40,6 +40,14 @@ These instructions apply to the entire repository.
   is an override; removing it returns to the current system-theme default.
 - Accessibility, keyboard operation, reduced motion, readable contrast, and
   useful empty/error states are part of a finished UI change.
+- Every new UI control and modal must follow the saved Boxy/Round shape setting
+  automatically, including selected states and controls outside the main page.
+  Load `ui-shape.css` on UI surfaces; use its `--control-radius` and
+  `--panel-radius` tokens (or `.ui-control` / `.ui-panel` for custom markup).
+  Native controls and radio inputs followed by a label span inherit shared
+  defaults. Keep fixed radii only for intentional geometry such as particle
+  circles, dials, and pills. Do not rely on adding each new feature to a
+  `.shape-round` selector list.
 
 ## Wave background integration
 
@@ -94,6 +102,8 @@ git diff --check
 For UI changes, load the built unpacked extension or serve
 `dist/chrome/newtab.html` locally. Verify the affected controls in both system
 themes, inspect the browser console, and check that settings survive reload.
+Also verify both Boxy and Round shapes, including selected/unselected controls,
+live shape changes, and persistence after reload.
 For wave changes, also verify Off, Random, every pinned preset, resizing,
 stacking, reduced motion, and that only one canvas/animation instance remains.
 

@@ -8,6 +8,7 @@ import {
   MAX_RECENT_REASONS
 } from "./shared.js";
 import { createSettingsPanel } from "./settings-panel.js";
+import { createMeditation } from "./meditation.js";
 
 const focusEl = document.getElementById("focus");
 const focusStartBtn = document.getElementById("focusStart");
@@ -23,6 +24,7 @@ const distractionModal = document.getElementById("distractionModal");
 const distractionDialog = distractionModal.querySelector(".modal");
 const breakMove = document.getElementById("breakMove");
 const breakConsume = document.getElementById("breakConsume");
+const breakMeditate = document.getElementById("breakMeditate");
 const breakChoices = breakMove.parentElement;
 const afkClose = document.getElementById("afkClose");
 const consumeBack = document.getElementById("consumeBack");
@@ -47,6 +49,11 @@ let settings = await loadSettings();
 let selectedMinutes = 10;
 let consumeDelayStartedAt = 0;
 let consumeDelayTimer = null;
+
+const meditation = createMeditation(() => {
+  openDistractionModal();
+  breakMeditate.focus();
+});
 
 const settingsPanel = createSettingsPanel(settingsPanelEl, {
   getSettings: () => settings,
@@ -80,6 +87,10 @@ settingsClose.addEventListener("click", () => closeModal(blockModal));
 distractionCancel.addEventListener("click", () => closeModal(distractionModal));
 breakMove.addEventListener("click", () => setBreakStep("afk"));
 breakConsume.addEventListener("click", () => setBreakStep("consume"));
+breakMeditate.addEventListener("click", () => {
+  closeModal(distractionModal);
+  meditation.open();
+});
 afkClose.addEventListener("click", () => closeModal(distractionModal));
 consumeBack.addEventListener("click", () => setBreakStep("choice"));
 distractionConfirm.addEventListener("click", onConfirmDistraction);
@@ -198,9 +209,10 @@ function setBreakStep(step) {
 }
 
 function randomizeBreakChoices() {
-  const choices = [breakMove, breakConsume];
-  if (Math.random() < 0.5) {
-    choices.reverse();
+  const choices = [breakMove, breakConsume, breakMeditate];
+  for (let i = choices.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [choices[i], choices[j]] = [choices[j], choices[i]];
   }
   breakChoices.replaceChildren(...choices);
 }

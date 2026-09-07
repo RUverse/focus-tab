@@ -6,6 +6,7 @@
     <title>Focus Clock</title>
     <link rel="icon" type="image/svg+xml" href="icons/icon.svg?v=2">
     <link rel="icon" type="image/png" href="icons/icon32.png?v=2">
+    <link rel="stylesheet" href="ui-shape.css">
     <link rel="stylesheet" href="newtab.css">
     <script type="module" src="newtab.js"></script>
     <script type="module" src="wave-background.js"></script>
@@ -135,6 +136,7 @@
           <p class="modal-sub">How do you want to spend it?</p>
           <div class="break-choices">
             <button type="button" class="break-choice" id="breakMove">Let's move that body</button>
+            <button type="button" class="break-choice" id="breakMeditate">Let's meditate</button>
             <button type="button" class="break-choice" id="breakConsume">Let's consume some content</button>
           </div>
           <div class="modal-actions">
@@ -183,5 +185,27 @@
         </div>
       </div>
     </div>
+    <dialog class="modal meditation-modal" id="meditationModal" aria-labelledby="meditationTitle">
+      <h2 class="modal-title" id="meditationTitle">Let's meditate</h2>
+      <div id="meditationSetup">
+        <p class="meditation-sub">A little space to slow down. Your blocks stay on.</p>
+        <fieldset class="meditation-durations">
+          <legend>Choose your duration</legend>
+          <label><input type="radio" name="meditationDuration" value="2" checked><span>2 min</span></label>
+          <label><input type="radio" name="meditationDuration" value="5"><span>5 min</span></label>
+          <label><input type="radio" name="meditationDuration" value="10"><span>10 min</span></label>
+        </fieldset>
+      </div>
+      <div class="meditation-session" id="meditationSession" hidden>
+        <div class="meditation-orbit" aria-hidden="true"><div class="meditation-particles" id="meditationParticles"></div></div>
+        <p class="meditation-instruction" id="meditationInstruction" role="status" aria-live="polite"></p>
+        <p class="meditation-sub" id="meditationRemaining" role="timer" aria-label="Time remaining"></p>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="ghost" id="meditationBack">Back</button>
+        <span class="spacer"></span>
+        <button type="button" class="primary" id="meditationStart">Start</button>
+      </div>
+    </dialog>
   </body>
 </html>
