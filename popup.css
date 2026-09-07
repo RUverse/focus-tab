@@ -528,17 +528,6 @@ h1 {
   right: 16px;
 }
 
-.shape-round .setting-input,
-.shape-round .color-input,
-.shape-round .custom-wave-editor,
-.shape-round .custom-wave-input,
-.shape-round .custom-wave-apply,
-.shape-round .block-add input,
-.shape-round .block-add button,
-.shape-round .block-list li {
-  border-radius: 20px;
-}
-
 .shape-round .color-input {
   overflow: hidden;
 }

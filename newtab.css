@@ -51,8 +51,8 @@ button {
   width: 100vw;
   min-height: 100vh;
   overflow: hidden;
-  --fidget-size: 72px;
-  --fidget-spinner-size: 112px;
+  --fidget-size: 144px;
+  --fidget-spinner-size: 224px;
   --sticky-note-width: 240px;
   --sticky-note-min-height: 116px;
   --sticky-note-content-min-height: 112px;
@@ -60,8 +60,7 @@ button {
   --sticky-note-bottom: 240px;
   --sticky-note-left: 46px;
   --sticky-note-horizontal-margin: 92px;
-  --sticky-note-border-width: 2px;
-  --sticky-note-radius: 18px;
+  --sticky-note-border-width: 1px;
   --sticky-note-handle-top: 7px;
   --sticky-note-handle-width: 86px;
   --sticky-note-handle-height: 18px;
@@ -560,27 +559,18 @@ button {
   bottom: var(--sticky-note-bottom);
   left: var(--sticky-note-left);
   z-index: 4;
-  width: min(var(--sticky-note-width), calc(100vw - var(--sticky-note-horizontal-margin)));
+  width: min(var(--sticky-note-width), calc(100vw - 32px));
   min-height: var(--sticky-note-min-height);
   max-height: min(var(--sticky-note-max-height), calc(100vh - var(--sticky-note-bottom) - 16px));
   display: flex;
-  overflow: hidden;
-  border: var(--sticky-note-border-width) solid currentColor;
-  border-radius: var(--sticky-note-radius);
+  border: var(--sticky-note-border-width) solid transparent;
+  border-radius: var(--panel-radius);
   background: transparent;
   color: currentColor;
-  opacity: 0.45;
-  transition: opacity 160ms var(--ease);
 }
 
 .sticky-note-list[hidden] {
   display: none;
-}
-
-.sticky-note-list:hover,
-.sticky-note-list:focus-within,
-.sticky-note-list.is-dragging {
-  opacity: 0.95;
 }
 
 .sticky-note-handle {
@@ -592,7 +582,8 @@ button {
   padding: 0;
   color: currentColor;
   cursor: grab;
-  opacity: 0.85;
+  opacity: var(--gadget-chrome-opacity);
+  transition: opacity 160ms var(--ease);
   touch-action: none;
   transform: translateX(-50%);
 }
@@ -616,6 +607,7 @@ button {
 
 .sticky-note-content {
   flex: 1;
+  border-radius: inherit;
   min-height: var(--sticky-note-content-min-height);
   max-height: none;
   overflow: auto;
@@ -629,10 +621,17 @@ button {
   word-break: break-word;
 }
 
-.gear-button {
+.gadget-toolbar {
   position: absolute;
   right: 46px;
   bottom: 40px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.gear-button,
+.gadget-toggle {
   display: grid;
   place-items: center;
   width: 40px;
@@ -647,6 +646,20 @@ button {
 .gear-button:focus-visible {
   opacity: 0.95;
   outline: none;
+}
+
+.gadget-toggle[hidden] { display: none; }
+
+.gadget-toggle[aria-pressed="true"] {
+  opacity: 1;
+}
+
+.gadget-toggle:hover { opacity: 0.95; }
+
+.gadget-toggle:focus-visible {
+  opacity: 0.95;
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
 }
 
 /* Modals (always dark, regardless of page mode) */
@@ -1425,10 +1438,6 @@ button {
   -webkit-text-stroke: 0.02em currentColor;
 }
 
-.shape-round .modal {
-  border-radius: 32px;
-}
-
 .shape-round .settings-tabs,
 .shape-round .segmented {
   border-radius: 999px;
@@ -1437,21 +1446,6 @@ button {
 
 .shape-round .select-chevron {
   right: 16px;
-}
-
-.shape-round .setting-input,
-.shape-round .color-input,
-.shape-round .custom-wave-editor,
-.shape-round .custom-wave-input,
-.shape-round .custom-wave-apply,
-.shape-round .block-add input,
-.shape-round .block-add button,
-.shape-round .block-list li,
-.shape-round .modal-actions .primary,
-.shape-round .modal-actions .ghost,
-.shape-round .break-choice,
-.shape-round .reason-input {
-  border-radius: 20px;
 }
 
 .shape-round .color-input {
@@ -1484,13 +1478,12 @@ button {
     row-gap: 3px;
   }
 
-  .gear-button {
+  .gadget-toolbar {
     right: 20px;
     bottom: 20px;
   }
 
   .newtab {
-    --sticky-note-width: 220px;
     --sticky-note-min-height: 104px;
     --sticky-note-max-height: 28vh;
     --sticky-note-bottom: 216px;
@@ -1501,5 +1494,279 @@ button {
   .fidget {
     bottom: 88px;
     left: 20px;
+  }
+}
+
+/* Native dialog keeps meditation keyboard focus contained. */
+.meditation-modal {
+  --meditation-ink: #ededed;
+  --meditation-muted: #aaa;
+  --meditation-border: #555;
+  color: var(--meditation-ink);
+  gap: 24px;
+}
+
+.meditation-modal:not([open]),
+.meditation-modal [hidden] {
+  display: none;
+}
+
+.meditation-modal::backdrop {
+  background: rgb(0 0 0 / 62%);
+}
+
+.meditation-sub {
+  margin: 0;
+  color: var(--meditation-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.meditation-durations {
+  display: flex;
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.meditation-durations legend {
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+}
+
+.meditation-durations label {
+  flex: 1;
+  position: relative;
+  cursor: pointer;
+}
+
+.meditation-durations input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.meditation-durations span {
+  display: block;
+  padding: 14px 4px;
+  border: 1px solid var(--meditation-border);
+  text-align: center;
+}
+
+.meditation-durations input:checked + span {
+  background: var(--meditation-ink);
+  color: #111;
+  border-color: var(--meditation-ink);
+}
+
+.meditation-modal :focus-visible,
+.meditation-durations input:focus-visible + span {
+  outline: 2px solid var(--meditation-ink);
+  outline-offset: 4px;
+}
+
+.meditation-session {
+  text-align: center;
+}
+
+.meditation-orbit {
+  width: min(260px, 100%);
+  aspect-ratio: 1;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+}
+
+.meditation-particles {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+.meditation-particles span {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+
+.meditation-instruction {
+  margin: 0 0 10px;
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.meditation-modal .ghost {
+  color: var(--meditation-ink);
+  border-color: var(--meditation-border);
+}
+
+@media (prefers-color-scheme: light) {
+  .meditation-modal {
+    --meditation-ink: #242424;
+    --meditation-muted: #606060;
+    --meditation-border: #aaa;
+    background: #fafafa;
+    border-color: #ddd;
+  }
+
+  .meditation-durations input:checked + span,
+  .meditation-modal .primary {
+    background: #242424;
+    color: #fafafa;
+    border-color: #242424;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meditation-particles {
+    will-change: auto;
+  }
+}
+
+.pomodoro {
+  --pomodoro-scale: 1;
+  position: absolute;
+  width: calc(240px * var(--pomodoro-scale));
+  padding: calc(30px * var(--pomodoro-scale)) calc(16px * var(--pomodoro-scale)) calc(16px * var(--pomodoro-scale));
+  border: 1px solid transparent;
+  border-radius: var(--panel-radius);
+  background: var(--light-bg);
+  color: var(--light-fg);
+  font-size: calc(12px * var(--pomodoro-scale));
+}
+
+.pomodoro[hidden] { display: none; }
+
+.pomodoro-handle {
+  position: absolute;
+  top: calc(7px * var(--pomodoro-scale));
+  left: 50%;
+  width: calc(86px * var(--pomodoro-scale));
+  height: calc(18px * var(--pomodoro-scale));
+  padding: 0;
+  color: inherit;
+  cursor: grab;
+  opacity: var(--gadget-chrome-opacity);
+  transition: opacity 160ms var(--ease);
+  touch-action: none;
+  transform: translateX(-50%);
+}
+
+.pomodoro-handle::before {
+  content: "";
+  position: absolute;
+  top: calc(7px * var(--pomodoro-scale));
+  left: 50%;
+  width: calc(80px * var(--pomodoro-scale));
+  height: calc(3px * var(--pomodoro-scale));
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.pomodoro-handle:active { cursor: grabbing; }
+
+.pomodoro-phases,
+.pomodoro-actions {
+  display: flex;
+  gap: calc(6px * var(--pomodoro-scale));
+}
+
+.pomodoro-phases button,
+.pomodoro-actions button {
+  flex: 1;
+  padding: calc(8px * var(--pomodoro-scale)) calc(4px * var(--pomodoro-scale));
+  border: 1px solid currentColor;
+  color: inherit;
+  cursor: pointer;
+}
+
+.pomodoro-phases button[aria-pressed="true"],
+.pomodoro-actions button:first-child {
+  background: var(--light-fg);
+  color: var(--light-bg);
+  border-color: var(--light-fg);
+}
+
+.pomodoro button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.pomodoro button:hover { opacity: 0.8; }
+
+.pomodoro-time {
+  padding-top: calc(12px * var(--pomodoro-scale));
+  font-size: calc(48px * var(--pomodoro-scale));
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.pomodoro-status {
+  min-height: 2.6em;
+  margin: calc(6px * var(--pomodoro-scale)) 0;
+  line-height: 1.3;
+  text-align: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pomodoro { background: var(--dark-bg); color: var(--dark-fg); }
+  .pomodoro-phases button[aria-pressed="true"],
+  .pomodoro-actions button:first-child {
+    background: var(--dark-fg);
+    color: var(--dark-bg);
+    border-color: var(--dark-fg);
+  }
+}
+
+/* Fade only gadget framing; text and timer controls retain full contrast. */
+.sticky-note-list,
+.pomodoro {
+  --gadget-chrome-opacity: 0.45;
+}
+
+.sticky-note-list:hover,
+.sticky-note-list:focus-within,
+.sticky-note-list.is-dragging,
+.pomodoro:hover,
+.pomodoro:focus-within,
+.pomodoro.is-dragging {
+  --gadget-chrome-opacity: 0.95;
+}
+
+.sticky-note-list::after,
+.pomodoro::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border: 1px solid currentColor;
+  border-radius: inherit;
+  opacity: var(--gadget-chrome-opacity);
+  transition: opacity 160ms var(--ease);
+  pointer-events: none;
+}
+
+.sticky-note-list::after {
+  inset: calc(-1 * var(--sticky-note-border-width));
+  border-width: var(--sticky-note-border-width);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticky-note-list::after,
+  .pomodoro::after,
+  .sticky-note-handle,
+  .pomodoro-handle {
+    transition: none;
   }
 }

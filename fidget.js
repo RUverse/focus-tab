@@ -1,4 +1,4 @@
-import { applyGadgetScaleStyles, loadSettings, onSettingsChanged, saveSettings } from "./shared.js";
+import { applyFidgetScaleStyles, loadSettings, onSettingsChanged, saveSettings } from "./shared.js";
 
 const root = document.getElementById("newtab");
 const fidgetEl = document.getElementById("fidget");
@@ -55,11 +55,11 @@ window.addEventListener("resize", onViewportResize);
 fidgetEl.addEventListener("pointerdown", onPointerDown);
 
 function render() {
-  applyGadgetScaleStyles(root, settings.gadgetScale);
+  applyFidgetScaleStyles(root, settings.fidgetScale);
   fidgetEl.dataset.type = settings.fidget;
-  fidgetEl.hidden = settings.fidget === "off";
+  fidgetEl.hidden = settings.fidget === "off" || settings.fidgetHidden;
 
-  if (settings.fidget !== "spinner") {
+  if (settings.fidget !== "spinner" || fidgetEl.hidden) {
     stopSpinner();
   }
 
@@ -71,7 +71,7 @@ function render() {
 }
 
 function onViewportResize() {
-  applyGadgetScaleStyles(root, settings.gadgetScale);
+  applyFidgetScaleStyles(root, settings.fidgetScale);
   applyPosition();
 }
 
