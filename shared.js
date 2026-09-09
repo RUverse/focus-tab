@@ -45,9 +45,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // Where the user last dropped the sticky note list, or null for its default spot.
   stickyNoteListPos: null,
   pomodoroEnabled: true,
+  pomodoroSessionGoal: 6,
   pomodoroHidden: true,
   pomodoroPos: null,
-  pomodoro: { phase: "focus", remainingMs: 25 * 60 * 1000, endsAt: 0 },
+  pomodoro: { phase: "focus", remainingMs: 25 * 60 * 1000, endsAt: 0, completedSessions: 0 },
   fidgetScale: 2,
   motivationalQuoteEnabled: true,
   waveBackground: "mood",
@@ -197,6 +198,8 @@ export function normalizeSettings(settings = {}) {
 
   normalized.pomodoroEnabled = normalized.pomodoroEnabled === true;
   normalized.pomodoro = normalizePomodoro(normalized.pomodoro);
+  normalized.pomodoroSessionGoal = Number.isInteger(normalized.pomodoroSessionGoal)
+    ? Math.max(1, Math.min(24, normalized.pomodoroSessionGoal)) : 6;
   const pomodoroPos = normalized.pomodoroPos;
   normalized.pomodoroPos = pomodoroPos && Number.isFinite(pomodoroPos.x) && Number.isFinite(pomodoroPos.y)
     ? { x: pomodoroPos.x, y: pomodoroPos.y } : null;
@@ -327,7 +330,9 @@ export function normalizePomodoro(value) {
   const remainingMs = Number.isFinite(value?.remainingMs) && value.remainingMs > 0
     ? Math.min(duration, value.remainingMs) : duration;
   const endsAt = Number.isSafeInteger(value?.endsAt) && value.endsAt > 0 ? value.endsAt : 0;
-  return { phase, remainingMs, endsAt };
+  const completedSessions = Number.isSafeInteger(value?.completedSessions) && value.completedSessions >= 0
+    ? value.completedSessions : 0;
+  return { phase, remainingMs, endsAt, completedSessions };
 }
 
 // Use a deadline so suspended or closed tabs do not slow the countdown. The
@@ -339,7 +344,8 @@ export function getPomodoroState(value, now = Date.now()) {
     return { ...state, remainingMs: Math.min(pomodoroDuration(state.phase), state.endsAt - now) };
   }
   const phase = state.phase === "focus" ? "break" : "focus";
-  return { phase, remainingMs: pomodoroDuration(phase), endsAt: 0 };
+  return { phase, remainingMs: pomodoroDuration(phase), endsAt: 0,
+    completedSessions: Math.min(Number.MAX_SAFE_INTEGER, state.completedSessions + (state.phase === "focus" ? 1 : 0)) };
 }
 
 export async function loadSettings() {

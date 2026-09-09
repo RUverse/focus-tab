@@ -18,7 +18,7 @@ A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab ex
 - Optional new-tab gadgets: motivational quotes, fidget toys, a sticky note list, and a Pomodoro timer
 - Greeting and date with a customizable Moment.js format
 - Rotating motivational quotes
-- **Focus mode**: a Focus button below the quote. Build a block list of sites. while focused those sites can't be opened and are redirected to this page instead.
+- **No distractions**: a button below the quote enables website blocking. Sites on your block list redirect to this page.
 - **Distraction breaks**: from the focused view, open the break picker and drag
   the dial to set 1 minute – 4 hours. During a break the blocked sites open
   normally and the new tab shows a `DISTRACTED` indicator counting down.
@@ -52,12 +52,13 @@ into pages and broad host access.
 
 ## How focus mode works
 
-- Clicking **Focus** the first time opens the block-list editor. Add sites and
+- Clicking **No distractions** the first time opens the block-list editor. Add sites and
   press *Start focus*.
-- While focused, the page shows **Focused.** plus a button to start a break.
+- While blocking is enabled, the page shows **No distractions.** plus a button
+  to start a break. **Focused.** appears only during a running Pomodoro focus interval.
 - Starting a break sets `distractionUntil`; the background worker drops the
   blocking rules until it elapses, then restores them automatically.
-- Clicking **Focus** during a break ends it early and resumes blocking.
+- Clicking **No distractions** during a break ends it early and resumes blocking.
 
 Spinner, sticky note, and Pomodoro are enabled but hidden by default.
 Use their bottom icons to show them. Enabled gadgets have visibility buttons beside
@@ -75,7 +76,14 @@ Enable **Pomodoro** in **Settings → Gadgets** for 25-minute focus intervals an
 Focus/Break to switch. Each completed interval cues the next one; press Start
 when ready. The timer survives reloads and stays in sync across new tabs. Drag
 its line handle (or use arrow keys while the handle is focused) to move it.
-The timer works independently of website blocking.
+The progress bar has one segment per focus session, filled as sessions finish,
+with a default goal of six. Adjust
+the goal (1–24) in **Settings → Gadgets → Pomodoro sessions**. Progress survives
+reloads.
+Resetting an interval or switching Focus/Break does not count as a completed session.
+Starting or resuming a Pomodoro focus interval automatically enables **No distractions**
+and ends any active distraction break. Pausing, resetting, or finishing the timer
+leaves website blocking enabled. Pomodoro breaks do not unblock websites.
 
 ## Install locally
 

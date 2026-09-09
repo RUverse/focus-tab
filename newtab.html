@@ -64,10 +64,10 @@
         </figure>
 
         <div class="focus" id="focus" data-state="idle">
-          <button type="button" class="focus-start" id="focusStart">Focus</button>
+          <button type="button" class="focus-start" id="focusStart">No distractions</button>
 
           <div class="focus-focused">
-            <p class="focus-status">Focused.</p>
+            <p class="focus-status" id="focusStatus" role="status">No distractions.</p>
             <button type="button" class="distraction-open" id="distractionOpen">
               I need a break
             </button>
@@ -116,6 +116,7 @@
         </div>
         <div class="pomodoro-time" id="pomodoroTime" role="timer" aria-live="off">25:00</div>
         <p class="pomodoro-status" id="pomodoroStatus" role="status" aria-live="polite">Ready to focus</p>
+        <div class="pomodoro-progress" id="pomodoroProgress" role="progressbar" aria-label="Completed focus sessions" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"></div>
         <div class="pomodoro-actions">
           <button type="button" id="pomodoroToggle">Start</button>
           <button type="button" id="pomodoroReset">Reset</button>

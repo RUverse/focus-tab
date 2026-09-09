@@ -3,6 +3,7 @@ import {
   onSettingsChanged,
   saveSettings,
   getFocusState,
+  getPomodoroState,
   DISTRACTION_MIN_MINUTES,
   DISTRACTION_MAX_MINUTES,
   MAX_RECENT_REASONS
@@ -11,6 +12,7 @@ import { createSettingsPanel } from "./settings-panel.js";
 import { createMeditation } from "./meditation.js";
 
 const focusEl = document.getElementById("focus");
+const focusStatus = document.getElementById("focusStatus");
 const focusStartBtn = document.getElementById("focusStart");
 const distractionOpenBtn = document.getElementById("distractionOpen");
 const distractionRemainingEl = document.getElementById("distractionRemaining");
@@ -125,6 +127,9 @@ function render() {
   const now = Date.now();
   const state = getFocusState(settings, now);
   focusEl.dataset.state = state;
+  const pomodoro = getPomodoroState(settings.pomodoro, now);
+  const label = pomodoro.phase === "focus" && pomodoro.endsAt ? "Focused." : "No distractions.";
+  if (focusStatus.textContent !== label) focusStatus.textContent = label;
 
   if (state === "distracted") {
     distractionRemainingEl.textContent = formatRemaining(settings.distractionUntil - now);
@@ -135,7 +140,7 @@ async function onFocusStart() {
   const state = getFocusState(settings);
 
   if (state === "distracted") {
-    // "Focus" during a break ends the break and resumes blocking.
+    // "No distractions" during a break ends it and resumes blocking.
     await saveSettings({ distractionUntil: 0 });
     return;
   }
