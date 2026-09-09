@@ -160,7 +160,7 @@ export function createSettingsPanel(root, options = {}) {
           <span>Undo</span>
         </button>
       </div>
-      <p class="modal-sub">Sites you add here can't be opened while you're focused.</p>
+      <p class="modal-sub">Sites you add here can't be opened while No distractions is active.</p>
 
       <div class="setting-row">
         <span class="setting-label-with-info">
@@ -224,6 +224,14 @@ export function createSettingsPanel(root, options = {}) {
         <div class="segmented" role="group" aria-label="Pomodoro">
           <button type="button" class="seg-button" data-pomodoro="false">Off</button>
           <button type="button" class="seg-button" data-pomodoro="true">On</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <span class="setting-label">Pomodoro sessions</span>
+        <div class="range-control">
+          <input class="range-input" data-pomodoro-goal type="range" min="1" max="24" step="1" aria-label="Pomodoro session goal">
+          <output class="range-value" data-pomodoro-goal-output>6</output>
         </div>
       </div>
 
@@ -369,6 +377,10 @@ export function createSettingsPanel(root, options = {}) {
     button.addEventListener("click", () => patchSettings({ pomodoroEnabled: button.dataset.pomodoro === "true", pomodoroHidden: false }));
   });
 
+  root.querySelector("[data-pomodoro-goal]").addEventListener("input", (event) => {
+    patchSettings({ pomodoroSessionGoal: Number(event.target.value) });
+  });
+
   fidgetScaleInput.addEventListener("input", () => {
     patchSettings({ fidgetScale: Number(fidgetScaleInput.value) });
   });
@@ -478,6 +490,8 @@ export function createSettingsPanel(root, options = {}) {
     clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[getSystemColorScheme()];
     clockColorReset.hidden = !settings.clockColor;
     setActive("[data-pomodoro]", (button) => (button.dataset.pomodoro === "true") === settings.pomodoroEnabled);
+    root.querySelector("[data-pomodoro-goal]").value = String(settings.pomodoroSessionGoal);
+    root.querySelector("[data-pomodoro-goal-output]").value = String(settings.pomodoroSessionGoal);
     fidgetScaleInput.value = String(settings.fidgetScale);
     fidgetScaleInput.setAttribute("aria-valuetext", formatScale(settings.fidgetScale));
     fidgetScaleOutput.value = formatScale(settings.fidgetScale);
@@ -542,7 +556,7 @@ export function createSettingsPanel(root, options = {}) {
       lock.className = "settings-lock block-lock-inline";
       lock.id = `block-lock-${index}`;
       lock.setAttribute("role", "status");
-      lock.textContent = "Locked while focused";
+      lock.textContent = "Locked while No distractions is active";
       lock.hidden = lockedRemoveHost !== host;
 
       const remove = document.createElement("button");
