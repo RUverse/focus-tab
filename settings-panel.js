@@ -436,9 +436,6 @@ export function createSettingsPanel(root, options = {}) {
     const exactHosts = settings.blockExactHosts.filter((item) => item !== host);
     if (!checkbox.checked) exactHosts.push(host);
     await patchSettings({ blockExactHosts: exactHosts });
-    // Rendering replaces the row; preserve keyboard focus on the changed control.
-    [...blockList.querySelectorAll("[data-block-children]")]
-      .find((input) => input.dataset.host === host)?.focus();
   });
 
   blockList.addEventListener("click", async (event) => {
@@ -561,6 +558,18 @@ export function createSettingsPanel(root, options = {}) {
       blockUndo.setAttribute("aria-label", `Undo removing ${lastRemoved.host}`);
     }
 
+    // Storage notifications can render again after the save promise resolves.
+    // Preserve the currently focused row control on every render, without
+    // stealing focus if the user has already moved outside the list.
+    const active = document.activeElement;
+    const focusedControl = blockList.contains(active)
+      ? {
+          host: active.dataset.host,
+          selector: active.matches("[data-block-children]")
+            ? "[data-block-children]" : "[data-block-remove]"
+        }
+      : null;
+
     blockList.replaceChildren();
     settings.blockList.forEach((host, index) => {
       const li = document.createElement("li");
@@ -608,6 +617,11 @@ export function createSettingsPanel(root, options = {}) {
       blockList.append(li);
     });
 
+    if (focusedControl) {
+      [...blockList.querySelectorAll(focusedControl.selector)]
+        .find((control) => control.dataset.host === focusedControl.host && !control.disabled)
+        ?.focus({ preventScroll: true });
+    }
     blockEmpty.hidden = settings.blockList.length > 0;
   }
 
