@@ -1,4 +1,4 @@
-import { loadSettings, saveSettings, isBlockingActive, getFocusState } from "./shared.js";
+import { loadSettings, saveSettings, isBlockingActive, getFocusState, hostIsBlocked } from "./shared.js";
 
 const DISTRACTION_ALARM = "focus-distraction-end";
 const FOCUS_PAGE = chrome.runtime.getURL("newtab.html");
@@ -98,27 +98,9 @@ function blockTab(tabId, url, settings, now, title) {
     return;
   }
 
-  if (hostIsBlocked(url, settings.blockList)) {
+  if (hostIsBlocked(url, settings.blockList, settings.blockExactHosts)) {
     chrome.tabs.update(tabId, { url: blockedUrlFor(url, title) }).catch(() => {});
   }
-}
-
-// True when `url`'s host is, or is a subdomain of, any blocked host.
-// Matches every path on the site (e.g. x.com, x.com/home, m.x.com/feed).
-function hostIsBlocked(url, blockList) {
-  if (typeof url !== "string" || !/^https?:\/\//i.test(url)) {
-    return false;
-  }
-
-  let host;
-  try {
-    host = new URL(url).hostname.toLowerCase();
-  } catch {
-    return false;
-  }
-
-  host = host.replace(/^www\./, "");
-  return blockList.some((blocked) => host === blocked || host.endsWith(`.${blocked}`));
 }
 
 // Catch fresh navigations before the page loads.

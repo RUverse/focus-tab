@@ -54,6 +54,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   waveBackground: "mood",
   customWaveConfig: "",
   blockList: [],
+  // Hosts whose block applies only to the exact hostname.
+  blockExactHosts: [],
   focusActive: false,
   distractionUntil: 0,
   contentBreakDelayEnabled: true,
@@ -223,6 +225,10 @@ export function normalizeSettings(settings = {}) {
   const hosts = Array.isArray(normalized.blockList) ? normalized.blockList : [];
   normalized.blockList = [...new Set(hosts.map(normalizeHost).filter(Boolean))];
 
+  const exactHosts = Array.isArray(normalized.blockExactHosts) ? normalized.blockExactHosts : [];
+  normalized.blockExactHosts = [...new Set(exactHosts.map(normalizeHost))]
+    .filter((host) => normalized.blockList.includes(host));
+
   normalized.focusActive = Boolean(normalized.focusActive);
 
   const until = Number(normalized.distractionUntil);
@@ -279,8 +285,7 @@ function roundCssValue(value) {
 }
 
 // Turn loose user input ("X.com", "https://www.x.com/path") into a bare,
-// lowercased registrable host ("x.com") suitable for declarativeNetRequest
-// requestDomains (which also matches subdomains).
+// lowercased hostname. Keep www so exact-host rules can distinguish it.
 export function normalizeHost(input) {
   if (typeof input !== "string") {
     return "";
@@ -297,7 +302,7 @@ export function normalizeHost(input) {
     host = host.replace(/^[a-z]+:\/\//, "").split("/")[0];
   }
 
-  host = host.replace(/^www\./, "").split(":")[0];
+  host = host.split(":")[0];
 
   return host.includes(".") ? host : "";
 }
@@ -410,4 +415,17 @@ export function pickRandom(items) {
 
 function hasChromeStorage() {
   return typeof chrome !== "undefined" && Boolean(chrome.storage && chrome.storage.local);
+}
+
+// All paths on a host match; descendant hosts match unless explicitly disabled.
+export function hostIsBlocked(url, blockList, exactHosts = []) {
+  if (typeof url !== "string" || !/^https?:\/\//i.test(url)) return false;
+  let host;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return blockList.some((blocked) => host === blocked ||
+    (!exactHosts.includes(blocked) && host.endsWith(`.${blocked}`)));
 }

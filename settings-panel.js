@@ -425,6 +425,22 @@ export function createSettingsPanel(root, options = {}) {
     await patchSettings({ blockList: [...settings.blockList, host] });
   });
 
+  blockList.addEventListener("change", async (event) => {
+    const checkbox = event.target.closest("[data-block-children]");
+    if (!checkbox) return;
+    if (getLocked()) {
+      renderBlockList();
+      return;
+    }
+    const host = checkbox.dataset.host;
+    const exactHosts = settings.blockExactHosts.filter((item) => item !== host);
+    if (!checkbox.checked) exactHosts.push(host);
+    await patchSettings({ blockExactHosts: exactHosts });
+    // Rendering replaces the row; preserve keyboard focus on the changed control.
+    [...blockList.querySelectorAll("[data-block-children]")]
+      .find((input) => input.dataset.host === host)?.focus();
+  });
+
   blockList.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-block-remove]");
     if (!button) {
@@ -439,7 +455,7 @@ export function createSettingsPanel(root, options = {}) {
     }
 
     lockedRemoveHost = "";
-    lastRemoved = { host, index: settings.blockList.indexOf(host) };
+    lastRemoved = { host, index: settings.blockList.indexOf(host), exact: settings.blockExactHosts.includes(host) };
     await patchSettings({ blockList: settings.blockList.filter((item) => item !== host) });
   });
 
@@ -451,7 +467,11 @@ export function createSettingsPanel(root, options = {}) {
     const next = [...settings.blockList];
     lockedRemoveHost = "";
     next.splice(Math.max(0, lastRemoved.index), 0, lastRemoved.host);
-    await patchSettings({ blockList: next });
+    await patchSettings({
+      blockList: next,
+      blockExactHosts: lastRemoved.exact
+        ? [...settings.blockExactHosts, lastRemoved.host] : settings.blockExactHosts
+    });
   });
 
   function render(nextSettings = settings) {
@@ -570,7 +590,20 @@ export function createSettingsPanel(root, options = {}) {
       }
       remove.textContent = "×";
 
-      actions.append(lock, remove);
+      const children = document.createElement("label");
+      children.className = "block-children";
+      children.title = locked ? "Locked while No distractions is active" : "Also block subdomains";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.dataset.blockChildren = "";
+      checkbox.dataset.host = host;
+      checkbox.checked = !settings.blockExactHosts.includes(host);
+      checkbox.disabled = locked;
+      checkbox.setAttribute("aria-label", `Include children of ${host}`);
+      const caption = document.createElement("span");
+      caption.textContent = "Include children";
+      children.append(checkbox, caption);
+      actions.append(children, lock, remove);
       li.append(name, actions);
       blockList.append(li);
     });
