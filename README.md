@@ -30,6 +30,10 @@ A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab ex
   each with its favicon and title. Click one to switch to it, or mute/unmute it
   in place. Updates live and hides when nothing is playing.
 - Gear button (bottom-right) to edit the block list and other settings at any time.
+- Each blocked site has **Include children** checked by default, blocking its
+  subdomains too. Uncheck it to block only the displayed hostname (all paths).
+  `www.example.com` is a child of `example.com`. This setting is locked while
+  No distractions is active, like removing a site.
 - Settings saved with `chrome.storage.local`; blocking enforced by a background
   service worker that watches navigations (`webNavigation`/`tabs`) and redirects
   any blocked page — including tabs that are already open — to the focus page.

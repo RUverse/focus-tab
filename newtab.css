@@ -1796,3 +1796,41 @@ button {
 .pomodoro-progress > .is-complete {
   background: currentColor;
 }
+
+.block-children {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.block-children input {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1px solid currentColor;
+  border-radius: var(--control-radius);
+  color: inherit;
+  background: transparent;
+  display: grid;
+  place-content: center;
+}
+
+.block-children input:checked::after {
+  content: "✓";
+  font-size: 12px;
+  line-height: 1;
+}
+
+.block-children input:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.block-children:has(input:disabled) {
+  opacity: 0.6;
+  cursor: default;
+}
