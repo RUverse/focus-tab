@@ -56,6 +56,10 @@ into pages and broad host access.
   press *Start focus*.
 - While blocking is enabled, the page shows **No distractions.** plus a button
   to start a break. **Focused.** appears only during a running Pomodoro focus interval.
+  The break button is hidden during running or paused Pomodoro focus intervals.
+  Running or paused Pomodoro breaks show encouragement such as **Well done.** and
+  restore the break button. Idle, reset, and disabled Pomodoro timers show
+  **No distractions.**
 - Starting a break sets `distractionUntil`; the background worker drops the
   blocking rules until it elapses, then restores them automatically.
 - Clicking **No distractions** during a break ends it early and resumes blocking.
