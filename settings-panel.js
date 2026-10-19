@@ -236,6 +236,14 @@ export function createSettingsPanel(root, options = {}) {
       </div>
 
       <div class="setting-row">
+        <span class="setting-label">Dictionary</span>
+        <div class="segmented" role="group" aria-label="Dictionary">
+          <button type="button" class="seg-button" data-dictionary="false">Off</button>
+          <button type="button" class="seg-button" data-dictionary="true">On</button>
+        </div>
+      </div>
+
+      <div class="setting-row">
         <span class="setting-label">Fidget scale</span>
         <div class="range-control">
           <input class="range-input" data-fidget-scale type="range" min="${FIDGET_SCALE_MIN}" max="${FIDGET_SCALE_MAX}" step="${FIDGET_SCALE_STEP}" aria-label="Fidget scale">
@@ -377,6 +385,10 @@ export function createSettingsPanel(root, options = {}) {
     button.addEventListener("click", () => patchSettings({ pomodoroEnabled: button.dataset.pomodoro === "true", pomodoroHidden: false }));
   });
 
+  root.querySelectorAll("[data-dictionary]").forEach((button) => {
+    button.addEventListener("click", () => patchSettings({ dictionaryEnabled: button.dataset.dictionary === "true", dictionaryHidden: false }));
+  });
+
   root.querySelector("[data-pomodoro-goal]").addEventListener("input", (event) => {
     patchSettings({ pomodoroSessionGoal: Number(event.target.value) });
   });
@@ -490,6 +502,7 @@ export function createSettingsPanel(root, options = {}) {
     clockColorInput.value = settings.clockColor || DEFAULT_CLOCK_COLORS[getSystemColorScheme()];
     clockColorReset.hidden = !settings.clockColor;
     setActive("[data-pomodoro]", (button) => (button.dataset.pomodoro === "true") === settings.pomodoroEnabled);
+    setActive("[data-dictionary]", (button) => (button.dataset.dictionary === "true") === settings.dictionaryEnabled);
     root.querySelector("[data-pomodoro-goal]").value = String(settings.pomodoroSessionGoal);
     root.querySelector("[data-pomodoro-goal-output]").value = String(settings.pomodoroSessionGoal);
     fidgetScaleInput.value = String(settings.fidgetScale);

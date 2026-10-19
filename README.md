@@ -4,7 +4,7 @@
 
 inspired by WHA Quotes & Clock New Tab Clone (not maintained anymore)
 
-A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab extension. Its packaged runtime is self-contained and offline; development uses esbuild, the published `@ruverse/waves` package for animated backgrounds, and Moment.js for customizable date formatting.
+A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab extension. Its packaged runtime is self-contained and works offline; only the optional dictionary gadget goes online, and only when you look something up. Development uses esbuild, the published `@ruverse/waves` package for animated backgrounds, and Moment.js for customizable date formatting.
 
 ## Features
 
@@ -15,7 +15,7 @@ A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab ex
 - Live local clock with optional seconds and 24-hour format
 - Custom accent color, with a reset to the theme default
 - Optional progress bars for the day, month, and year
-- Optional new-tab gadgets: motivational quotes, fidget toys, a sticky note list, and a Pomodoro timer
+- Optional new-tab gadgets: motivational quotes, fidget toys, a sticky note list, a Pomodoro timer, and a dictionary
 - Greeting and date with a customizable Moment.js format
 - Rotating motivational quotes
 - **No distractions**: a button below the quote enables website blocking. Sites on your block list redirect to this page.
@@ -45,7 +45,11 @@ so it does not trigger the Chrome Web Store's in-depth host-permission review:
   of audible tabs for the "Now playing" panel.
 - `webNavigation` — catch navigation to a blocked site before it loads.
 
-No data is collected or transmitted; everything stays on your device. The
+No data is collected, and settings stay on your device. The one exception is
+the dictionary gadget: when you look something up, it sends that word or phrase
+to Wiktionary and, for phrases, possibly to MyMemory (see
+[Dictionary gadget](#dictionary-gadget)). These are ordinary CORS requests, so
+no host permissions are needed. The
 "Now playing" panel shows playing tabs but cannot read media metadata (song,
 artist, artwork) or pause playback, since that would require injecting code
 into pages and broad host access.
@@ -60,7 +64,7 @@ into pages and broad host access.
   blocking rules until it elapses, then restores them automatically.
 - Clicking **No distractions** during a break ends it early and resumes blocking.
 
-Spinner, sticky note, and Pomodoro are enabled but hidden by default.
+Spinner, sticky note, Pomodoro, and dictionary are enabled but hidden by default.
 Use their bottom icons to show them. Enabled gadgets have visibility buttons beside
 the settings gear. Click an icon to hide or show its gadget. Visibility is saved
 without clearing gadget content, position, or timer state.
@@ -84,6 +88,31 @@ Resetting an interval or switching Focus/Break does not count as a completed ses
 Starting or resuming a Pomodoro focus interval automatically enables **No distractions**
 and ends any active distraction break. Pausing, resetting, or finishing the timer
 leaves website blocking enabled. Pomodoro breaks do not unblock websites.
+
+## Dictionary gadget
+
+Show the dictionary with its icon beside the settings gear, or switch it on or
+off in **Settings → Gadgets → Dictionary**. Pick the language you are reading
+(German, French, Spanish, Italian, Dutch, or Portuguese), type a word or phrase,
+and press Enter. Each result row shows the word, its English translation, and
+a definition in the original language below. The gadget shows the three newest
+lookups; **Show all** expands it into a scrollable history of up to 100 lookups.
+Looking up a saved word again moves it to the top without going online. Hover
+or focus a row to remove it.
+
+- Words and short set phrases (up to three words) are looked up on
+  [Wiktionary](https://www.wiktionary.org/): English glosses come from English
+  Wiktionary, and definitions from the Wiktionary edition in that language.
+- Sentences, and words with no English Wiktionary entry, are machine translated.
+  Chrome uses its built-in on-device Translator when the language model is
+  installed; the first lookup starts downloading it. Otherwise the text is sent
+  to the free [MyMemory](https://mymemory.translated.net/) API, about 5,000
+  characters a day, and the row is marked as a machine translation.
+- Lookups that fail (no match, offline, or the service is down) show a message
+  under the box and are not saved.
+
+The history is stored with your other settings in `chrome.storage.local`. Drag
+the line handle, or focus it and use the arrow keys, to move the gadget.
 
 ## Install locally
 

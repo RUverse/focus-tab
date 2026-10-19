@@ -1730,7 +1730,8 @@ button {
 
 /* Fade only gadget framing; text and timer controls retain full contrast. */
 .sticky-note-list,
-.pomodoro {
+.pomodoro,
+.dictionary {
   --gadget-chrome-opacity: 0.45;
 }
 
@@ -1739,12 +1740,16 @@ button {
 .sticky-note-list.is-dragging,
 .pomodoro:hover,
 .pomodoro:focus-within,
-.pomodoro.is-dragging {
+.pomodoro.is-dragging,
+.dictionary:hover,
+.dictionary:focus-within,
+.dictionary.is-dragging {
   --gadget-chrome-opacity: 0.95;
 }
 
 .sticky-note-list::after,
-.pomodoro::after {
+.pomodoro::after,
+.dictionary::after {
   content: "";
   position: absolute;
   inset: -1px;
@@ -1763,8 +1768,11 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .sticky-note-list::after,
   .pomodoro::after,
+  .dictionary::after,
   .sticky-note-handle,
-  .pomodoro-handle {
+  .pomodoro-handle,
+  .dictionary-handle,
+  .dictionary-remove {
     transition: none;
   }
 }
@@ -1795,4 +1803,253 @@ button {
 
 .pomodoro-progress > .is-complete {
   background: currentColor;
+}
+
+/* Dictionary: lookup box with the newest lookups below it. */
+.dictionary {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(320px, calc(100vw - 32px));
+  padding: 30px 14px 10px;
+  border: 1px solid transparent;
+  background: var(--light-bg);
+  color: var(--light-fg);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.dictionary[hidden] { display: none; }
+
+.dictionary-handle {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 86px;
+  height: 18px;
+  padding: 0;
+  color: inherit;
+  cursor: grab;
+  opacity: var(--gadget-chrome-opacity);
+  transition: opacity 160ms var(--ease);
+  touch-action: none;
+  transform: translateX(-50%);
+}
+
+.dictionary-handle::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 80px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.dictionary-handle:active,
+.dictionary.is-dragging .dictionary-handle { cursor: grabbing; }
+
+.dictionary-form {
+  display: flex;
+  gap: 6px;
+}
+
+.dictionary-input,
+.dictionary-language {
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  background: transparent;
+  color: inherit;
+}
+
+.dictionary-input {
+  flex: 1;
+}
+
+.dictionary-input::placeholder {
+  color: inherit;
+  opacity: 0.6;
+}
+
+.dictionary-language {
+  flex: none;
+  max-width: 42%;
+  cursor: pointer;
+}
+
+.dictionary-language option {
+  background: var(--light-bg);
+  color: var(--light-fg);
+}
+
+.dictionary-input:focus-visible,
+.dictionary-language:focus-visible,
+.dictionary button:focus-visible,
+.dictionary a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.dictionary-input:focus-visible {
+  outline-offset: 1px;
+}
+
+.dictionary[aria-busy="true"] .dictionary-input {
+  opacity: 0.7;
+}
+
+.dictionary-status {
+  margin: 0;
+  font-size: 12px;
+}
+
+.dictionary-status:empty { display: none; }
+
+.dictionary-status[data-tone="error"] { font-weight: 600; }
+
+/* Confirmation for assistive technology only; the new row is the visual cue. */
+.dictionary-status[data-tone="quiet"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.dictionary-history {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dictionary-history.is-expanded {
+  max-height: min(420px, 50vh);
+  margin-right: -8px;
+  padding-right: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.dictionary-entry {
+  padding: 8px 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.dictionary-entry:first-child { border-top: 0; }
+
+.dictionary-entry-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.dictionary-term {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.dictionary-entry-lang {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  text-decoration: none;
+}
+
+.dictionary-translation {
+  overflow-wrap: anywhere;
+}
+
+.dictionary-remove {
+  display: grid;
+  place-items: center;
+  align-self: start;
+  width: 22px;
+  height: 22px;
+  margin: -2px -4px 0 0;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 160ms var(--ease);
+}
+
+.dictionary-entry:hover .dictionary-remove { opacity: 0.6; }
+
+.dictionary-remove:hover,
+.dictionary-remove:focus-visible { opacity: 1; }
+
+/* Touch screens cannot hover to reveal the remove button. */
+@media (hover: none) {
+  .dictionary-remove { opacity: 0.6; }
+}
+
+.dictionary-definition,
+.dictionary-note {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: color-mix(in srgb, currentColor 78%, transparent);
+  overflow-wrap: anywhere;
+}
+
+/* Collapsed rows stay compact; the expanded history shows more of each
+   definition. The full text is in the row's tooltip. */
+.dictionary-definition {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.dictionary-history.is-expanded .dictionary-definition {
+  -webkit-line-clamp: 4;
+}
+
+.dictionary-note {
+  font-size: 11px;
+}
+
+.dictionary-empty {
+  padding: 4px 0 6px;
+  font-size: 12px;
+  color: color-mix(in srgb, currentColor 78%, transparent);
+}
+
+.dictionary-footer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.dictionary-more {
+  padding: 4px 0;
+  color: inherit;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dictionary-more:hover { opacity: 0.8; }
+
+.dictionary-credit {
+  margin-left: auto;
+  color: color-mix(in srgb, currentColor 78%, transparent);
+}
+
+.dictionary-credit a { color: inherit; }
+
+@media (prefers-color-scheme: dark) {
+  .dictionary { background: var(--dark-bg); color: var(--dark-fg); }
+  .dictionary-language option { background: var(--dark-bg); color: var(--dark-fg); }
 }
