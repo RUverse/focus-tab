@@ -14,6 +14,7 @@
     <script type="module" src="fidget.js"></script>
     <script type="module" src="sticky-note.js"></script>
     <script type="module" src="pomodoro.js"></script>
+    <script type="module" src="dictionary.js"></script>
   </head>
   <body>
     <main class="newtab" id="newtab" aria-live="polite">
@@ -123,6 +124,23 @@
         </div>
       </section>
 
+      <section class="dictionary ui-panel" id="dictionary" aria-label="Dictionary" hidden>
+        <button type="button" class="dictionary-handle" id="dictionaryHandle" aria-label="Move dictionary. Use arrow keys to move." title="Drag to move, or use arrow keys"></button>
+        <form class="dictionary-form" id="dictionaryForm" role="search" aria-label="Look up a word or phrase">
+          <input class="dictionary-input" id="dictionaryInput" type="text" maxlength="500" placeholder="Word or phrase" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-describedby="dictionaryStatus">
+          <span class="dictionary-language ui-control" id="dictionaryLanguageBox">
+            <span class="dictionary-language-code" id="dictionaryLanguageCode" aria-hidden="true"></span>
+            <select id="dictionaryLanguage" aria-label="Language to look up"></select>
+          </span>
+        </form>
+        <p class="dictionary-status" id="dictionaryStatus" role="status" aria-live="polite"></p>
+        <ol class="dictionary-history" id="dictionaryHistory" aria-label="Lookup history"></ol>
+        <div class="dictionary-footer">
+          <span class="dictionary-credit">Words from <a href="https://www.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a></span>
+        </div>
+        <button type="button" class="dictionary-resize" id="dictionaryResize" aria-label="Resize dictionary. Use arrow keys to resize." title="Drag to resize, double-click to reset"></button>
+      </section>
+
       <div class="gadget-toolbar" role="group" aria-label="Gadget visibility and settings">
         <button type="button" class="gadget-toggle" data-gadget-toggle="fidget" aria-label="Fidget" aria-controls="fidget" aria-pressed="true" title="Hide fidget" hidden>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2">
@@ -132,7 +150,7 @@
             <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>
           </svg>
         </button>
-        <!-- Tabler Icons (MIT): note and hourglass-empty. See icons/LICENSE-tabler.txt. -->
+        <!-- Tabler Icons (MIT): note, hourglass-empty, and language. See icons/LICENSE-tabler.txt. -->
         <button type="button" class="gadget-toggle" data-gadget-toggle="stickyNoteList" aria-label="Sticky note" aria-controls="stickyNoteList" aria-pressed="true" title="Hide sticky note" hidden>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M13 20l7 -7"/>
@@ -143,6 +161,15 @@
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1"/>
             <path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1"/>
+          </svg>
+        </button>
+        <button type="button" class="gadget-toggle" data-gadget-toggle="dictionary" aria-label="Dictionary" aria-controls="dictionary" aria-pressed="true" title="Hide Dictionary" hidden>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 5h7"/>
+            <path d="M9 3v2c0 4.418 -2.239 8 -5 8"/>
+            <path d="M5 9c0 2.144 2.952 3.908 6.7 4"/>
+            <path d="M12 20l4 -9l4 9"/>
+            <path d="M19.1 18h-6.2"/>
           </svg>
         </button>
         <button type="button" class="gear-button" id="gearButton" aria-label="Settings" title="Settings">

@@ -32,6 +32,8 @@ const ASSETS = [
   "newtab.js",
   "sticky-note.js",
   "pomodoro.js",
+  "dictionary.js",
+  "dictionary-lookup.js",
   "popup.js",
   "settings-panel.js",
   "shared.js",

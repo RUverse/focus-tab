@@ -23,6 +23,30 @@ export const CUSTOM_WAVE_CONFIG_MAX_LENGTH = 4096;
 export const DATE_FORMAT_MAX_LENGTH = 80;
 export const DEFAULT_DATE_FORMAT = "dddd, MMMM D";
 
+// Source languages the dictionary gadget can look up; translations are English.
+// English itself gets English definitions.
+export const DICTIONARY_LANGUAGES = Object.freeze([
+  { code: "en", label: "English" },
+  { code: "de", label: "German" },
+  { code: "fr", label: "French" },
+  { code: "es", label: "Spanish" },
+  { code: "it", label: "Italian" },
+  { code: "nl", label: "Dutch" },
+  { code: "pt", label: "Portuguese" }
+]);
+export const DICTIONARY_HISTORY_MAX = 100;
+export const DICTIONARY_TERM_MAX_CHARS = 500;
+export const DICTIONARY_TRANSLATION_MAX_CHARS = 1000;
+export const DICTIONARY_DEFINITION_MAX_CHARS = 400;
+export const DICTIONARY_DEFINITIONS_MAX = 3;
+// Where a row's translation came from: Wiktionary glosses, the browser's
+// on-device translator, or the MyMemory machine-translation fallback.
+export const DICTIONARY_SOURCES = ["wiktionary", "on-device", "mymemory"];
+// Bounds for a dictionary box the user has resized, in CSS pixels.
+export const DICTIONARY_MIN_WIDTH = 260;
+export const DICTIONARY_MIN_HEIGHT = 180;
+export const DICTIONARY_MAX_SIZE = 4000;
+
 // Per-system-theme clock colour used when the user hasn't picked a custom one.
 export const DEFAULT_CLOCK_COLORS = Object.freeze({ dark: "#d7d7d7", light: "#252525" });
 
@@ -49,6 +73,14 @@ export const DEFAULT_SETTINGS = Object.freeze({
   pomodoroHidden: true,
   pomodoroPos: null,
   pomodoro: { phase: "focus", remainingMs: 25 * 60 * 1000, endsAt: 0, completedSessions: 0 },
+  dictionaryEnabled: true,
+  dictionaryHidden: true,
+  dictionaryPos: null,
+  // null keeps the default width and a height that fits about three rows.
+  dictionarySize: null,
+  dictionaryLanguage: "de",
+  // Newest first: { lang, term, translation, definitions: [], source, at }.
+  dictionaryHistory: [],
   fidgetScale: 2,
   motivationalQuoteEnabled: true,
   waveBackground: "mood",
@@ -182,7 +214,7 @@ export function normalizeSettings(settings = {}) {
       ? { x: Number(pos.x), y: Number(pos.y) }
       : null;
 
-  for (const key of ["fidgetHidden", "stickyNoteListHidden", "pomodoroHidden"]) {
+  for (const key of ["fidgetHidden", "stickyNoteListHidden", "pomodoroHidden", "dictionaryHidden"]) {
     normalized[key] = normalized[key] === true;
   }
 
@@ -203,6 +235,16 @@ export function normalizeSettings(settings = {}) {
   const pomodoroPos = normalized.pomodoroPos;
   normalized.pomodoroPos = pomodoroPos && Number.isFinite(pomodoroPos.x) && Number.isFinite(pomodoroPos.y)
     ? { x: pomodoroPos.x, y: pomodoroPos.y } : null;
+
+  normalized.dictionaryEnabled = normalized.dictionaryEnabled !== false;
+  const dictionaryPos = normalized.dictionaryPos;
+  normalized.dictionaryPos = dictionaryPos && Number.isFinite(dictionaryPos.x) && Number.isFinite(dictionaryPos.y)
+    ? { x: dictionaryPos.x, y: dictionaryPos.y } : null;
+  normalized.dictionarySize = normalizeDictionarySize(normalized.dictionarySize);
+  if (!isDictionaryLanguage(normalized.dictionaryLanguage)) {
+    normalized.dictionaryLanguage = DEFAULT_SETTINGS.dictionaryLanguage;
+  }
+  normalized.dictionaryHistory = normalizeDictionaryHistory(normalized.dictionaryHistory);
 
   // Preserve the previous scale preference for fidgets only.
   const fidgetScale = Number(settings?.fidgetScale ?? settings?.gadgetScale ?? DEFAULT_SETTINGS.fidgetScale);
@@ -244,6 +286,85 @@ export function normalizeSettings(settings = {}) {
   };
 
   return normalized;
+}
+
+export function isDictionaryLanguage(code) {
+  return DICTIONARY_LANGUAGES.some((language) => language.code === code);
+}
+
+export function normalizeDictionarySize(size) {
+  if (!size || !Number.isFinite(size.width) || !Number.isFinite(size.height)) {
+    return null;
+  }
+  const clamp = (value, min) => Math.round(Math.min(Math.max(value, min), DICTIONARY_MAX_SIZE));
+  return { width: clamp(size.width, DICTIONARY_MIN_WIDTH), height: clamp(size.height, DICTIONARY_MIN_HEIGHT) };
+}
+
+export function dictionaryKey(lang, term) {
+  return `${lang}:${String(term).trim().toLocaleLowerCase()}`;
+}
+
+function dictionaryText(value, max) {
+  return String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+// Returns a clean entry, or null when it is unusable.
+export function normalizeDictionaryEntry(entry) {
+  if (!entry || typeof entry !== "object" || !isDictionaryLanguage(entry.lang)) {
+    return null;
+  }
+
+  const term = dictionaryText(entry.term, DICTIONARY_TERM_MAX_CHARS);
+  const translation = dictionaryText(entry.translation, DICTIONARY_TRANSLATION_MAX_CHARS);
+  if (!term || !translation) {
+    return null;
+  }
+
+  const definitions = (Array.isArray(entry.definitions) ? entry.definitions : [])
+    .map((definition) => dictionaryText(definition, DICTIONARY_DEFINITION_MAX_CHARS))
+    .filter(Boolean)
+    .slice(0, DICTIONARY_DEFINITIONS_MAX);
+  const at = Number(entry.at);
+
+  return {
+    lang: entry.lang,
+    term,
+    translation,
+    definitions,
+    source: DICTIONARY_SOURCES.includes(entry.source) ? entry.source : "wiktionary",
+    at: Number.isFinite(at) && at > 0 ? Math.floor(at) : 0
+  };
+}
+
+export function normalizeDictionaryHistory(history) {
+  const seen = new Set();
+  const entries = [];
+  for (const item of Array.isArray(history) ? history : []) {
+    const entry = normalizeDictionaryEntry(item);
+    const key = entry && dictionaryKey(entry.lang, entry.term);
+    if (!entry || seen.has(key)) continue;
+    seen.add(key);
+    entries.push(entry);
+    if (entries.length === DICTIONARY_HISTORY_MAX) break;
+  }
+  return entries;
+}
+
+// Put an entry at the top of the history, replacing an earlier lookup of the
+// same term in the same language, and drop the oldest past the cap.
+export function addDictionaryEntry(history, entry) {
+  const next = normalizeDictionaryEntry(entry);
+  if (!next) {
+    return normalizeDictionaryHistory(history);
+  }
+  const key = dictionaryKey(next.lang, next.term);
+  const rest = normalizeDictionaryHistory(history).filter((item) => dictionaryKey(item.lang, item.term) !== key);
+  return [next, ...rest].slice(0, DICTIONARY_HISTORY_MAX);
+}
+
+export function removeDictionaryEntry(history, lang, term) {
+  const key = dictionaryKey(lang, term);
+  return normalizeDictionaryHistory(history).filter((item) => dictionaryKey(item.lang, item.term) !== key);
 }
 
 export function normalizeFidgetScale(value) {
