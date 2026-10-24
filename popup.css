@@ -366,6 +366,57 @@ h1 {
   color: var(--active-fg);
 }
 
+.content-lock-editor {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 12px;
+}
+
+.content-lock-editor[hidden] {
+  display: none;
+}
+
+.content-lock-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.content-lock-days .seg-button {
+  min-width: 0;
+  padding: 0;
+}
+
+.content-lock-times {
+  display: flex;
+  gap: 12px;
+}
+
+.content-lock-time {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.content-lock-time .setting-input {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  background: var(--bg);
+}
+
+.content-lock-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
 .color-control {
   display: flex;
   align-items: center;

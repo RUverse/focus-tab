@@ -6,8 +6,12 @@ import {
   FIDGET_SCALE_MAX,
   FIDGET_SCALE_MIN,
   FIDGET_SCALE_STEP,
+  SCHEDULE_DAYS,
   WAVE_BACKGROUNDS,
+  formatScheduleMoment,
+  getContentBreakLockEnd,
   getFocusState,
+  getNextContentBreakLockStart,
   getSystemColorScheme,
   normalizeHost,
   saveSettings
@@ -184,6 +188,46 @@ export function createSettingsPanel(root, options = {}) {
         </div>
       </div>
 
+      <div class="setting-row">
+        <span class="setting-label-with-info">
+          <span class="setting-label">Lock content breaks</span>
+          <span class="info-tooltip">
+            <button type="button" class="info-tooltip-trigger" aria-label="About locking content breaks" aria-describedby="contentLockTooltip">
+              <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                <circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M10 8.7v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <circle cx="10" cy="5.9" r="1" fill="currentColor"/>
+              </svg>
+            </button>
+            <span class="info-tooltip-content" id="contentLockTooltip" role="tooltip">
+              Content breaks can't be started on these days and hours. Moving and meditating stay available. A "To" time earlier than "From" runs overnight.
+            </span>
+          </span>
+        </span>
+        <div class="segmented" role="group" aria-label="Lock content breaks">
+          <button type="button" class="seg-button" data-content-lock="false">Off</button>
+          <button type="button" class="seg-button" data-content-lock="true">On</button>
+        </div>
+      </div>
+
+      <div class="content-lock-editor ui-control" data-content-lock-editor role="group" aria-label="Content break lock hours" hidden>
+        <div class="segmented content-lock-days" role="group" aria-label="Days">
+          ${SCHEDULE_DAYS.map(({ day, short, long }) =>
+            `<button type="button" class="seg-button" data-content-lock-day="${day}" aria-label="${long}">${short}</button>`).join("")}
+        </div>
+        <div class="content-lock-times">
+          <label class="content-lock-time">
+            <span>From</span>
+            <input class="setting-input" data-content-lock-start type="time" required>
+          </label>
+          <label class="content-lock-time">
+            <span>To</span>
+            <input class="setting-input" data-content-lock-end type="time" required>
+          </label>
+        </div>
+        <p class="content-lock-status" data-content-lock-status role="status"></p>
+      </div>
+
       <form class="block-add" data-block-form>
         <input data-block-input type="text" placeholder="x.com" autocomplete="off" spellcheck="false" aria-label="Website to block">
         <button type="submit">Add</button>
@@ -265,6 +309,10 @@ export function createSettingsPanel(root, options = {}) {
   const blockList = root.querySelector("[data-block-list]");
   const blockEmpty = root.querySelector("[data-block-empty]");
   const blockUndo = root.querySelector("[data-block-undo]");
+  const contentLockEditor = root.querySelector("[data-content-lock-editor]");
+  const contentLockStart = root.querySelector("[data-content-lock-start]");
+  const contentLockEnd = root.querySelector("[data-content-lock-end]");
+  const contentLockStatus = root.querySelector("[data-content-lock-status]");
   const fidgetScaleInput = root.querySelector("[data-fidget-scale]");
   const fidgetScaleOutput = root.querySelector("[data-fidget-scale-output]");
   const waveBackgroundSelect = root.querySelector("[data-wave-background]");
@@ -401,6 +449,40 @@ export function createSettingsPanel(root, options = {}) {
     button.addEventListener("click", () => patchSettings({ contentBreakDelayEnabled: button.dataset.breakDelay === "true" }));
   });
 
+  root.querySelectorAll("[data-content-lock]").forEach((button) => {
+    button.addEventListener("click", () => patchContentLock({ enabled: button.dataset.contentLock === "true" }));
+  });
+
+  root.querySelectorAll("[data-content-lock-day]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const day = Number(button.dataset.contentLockDay);
+      const days = settings.contentBreakLock.days;
+      patchContentLock({ days: days.includes(day) ? days.filter((item) => item !== day) : [...days, day] });
+    });
+  });
+
+  [[contentLockStart, "start"], [contentLockEnd, "end"]].forEach(([input, key]) => {
+    input.addEventListener("change", () => {
+      const minutes = parseTimeInput(input.value);
+      if (minutes !== null) {
+        patchContentLock({ [key]: minutes });
+      }
+    });
+    // A cleared field falls back to the saved time once the user leaves it.
+    input.addEventListener("blur", () => {
+      if (parseTimeInput(input.value) === null) {
+        renderContentLock();
+      }
+    });
+  });
+
+  // Keep "locked until …" current while the panel stays open.
+  window.setInterval(() => {
+    if (!contentLockEditor.hidden) {
+      renderContentLockStatus();
+    }
+  }, 30000);
+
   nameInput.addEventListener("input", () => {
     window.clearTimeout(nameSaveTimer);
     const value = nameInput.value;
@@ -514,7 +596,40 @@ export function createSettingsPanel(root, options = {}) {
         ? settings.waveBackground
         : DEFAULT_SETTINGS.waveBackground;
     renderCustomWaveEditor();
+    renderContentLock();
     renderBlockList();
+  }
+
+  function renderContentLock() {
+    const lock = settings.contentBreakLock;
+    setActive("[data-content-lock]", (button) => (button.dataset.contentLock === "true") === lock.enabled);
+    setActive("[data-content-lock-day]", (button) => lock.days.includes(Number(button.dataset.contentLockDay)));
+    contentLockEditor.hidden = !lock.enabled;
+    if (document.activeElement !== contentLockStart) {
+      contentLockStart.value = formatTimeInput(lock.start);
+    }
+    if (document.activeElement !== contentLockEnd) {
+      contentLockEnd.value = formatTimeInput(lock.end);
+    }
+    renderContentLockStatus();
+  }
+
+  function renderContentLockStatus() {
+    const lock = settings.contentBreakLock;
+    const now = Date.now();
+    const lockedUntil = getContentBreakLockEnd(lock, now);
+    const nextLock = getNextContentBreakLockStart(lock, now);
+    let message = "Choose at least one day.";
+    if (lockedUntil === Infinity) {
+      message = "Content breaks are locked all week.";
+    } else if (lockedUntil) {
+      message = `Locked now. Content breaks unlock ${formatScheduleMoment(lockedUntil, now, settings.hour24)}.`;
+    } else if (nextLock) {
+      message = `Content breaks lock ${formatScheduleMoment(nextLock, now, settings.hour24)}.`;
+    }
+    if (contentLockStatus.textContent !== message) {
+      contentLockStatus.textContent = message;
+    }
   }
 
   function renderCustomWaveEditor() {
@@ -608,6 +723,11 @@ export function createSettingsPanel(root, options = {}) {
     return settings;
   }
 
+  // Settings merge shallowly, so send the whole lock object with each change.
+  function patchContentLock(patch) {
+    return patchSettings({ contentBreakLock: { ...settings.contentBreakLock, ...patch } });
+  }
+
   function saveClockColor() {
     patchSettings({ clockColor: clockColorInput.value });
   }
@@ -648,6 +768,19 @@ export function createSettingsPanel(root, options = {}) {
 function formatScale(value) {
   const rounded = Math.round(Number(value) * 100) / 100;
   return `${rounded.toFixed(2).replace(/\.?0+$/, "")}x`;
+}
+
+// <input type="time"> values are "HH:MM" in 24-hour time regardless of locale.
+function formatTimeInput(minutes) {
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
+function parseTimeInput(value) {
+  const match = /^(\d{2}):(\d{2})/.exec(value);
+  if (!match || Number(match[1]) > 23 || Number(match[2]) > 59) {
+    return null;
+  }
+  return Number(match[1]) * 60 + Number(match[2]);
 }
 
 function parseCandidate(candidate) {
