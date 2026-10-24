@@ -93,8 +93,8 @@ leaves website blocking enabled. Pomodoro breaks do not unblock websites.
 
 Show the dictionary with its icon beside the settings gear, or switch it on or
 off in **Settings → Gadgets → Dictionary**. Pick the language you are reading
-with the language code beside the box (German, French, Spanish, Italian, Dutch,
-Portuguese, or English), type a word or phrase, and press Enter. Each result row
+with the language code beside the box (English, German, French, Spanish, Italian,
+Dutch, or Portuguese), type a word or phrase, and press Enter. Each result row
 shows the word, its English translation, and a definition in the original
 language below. English words show their parts of speech and English
 definitions instead. The history scrolls and keeps up to 100 lookups; drag the

@@ -1773,7 +1773,9 @@ button {
   .pomodoro-handle,
   .dictionary-handle,
   .dictionary-resize,
-  .dictionary-remove {
+  .dictionary-remove,
+  .dictionary-language-code,
+  .dictionary-language::after {
     transition: none;
   }
 }
@@ -1885,8 +1887,21 @@ button {
   flex: none;
   gap: 5px;
   align-items: center;
-  font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+/* The code and arrow match the border until the picker is hovered or focused. */
+.dictionary-language-code,
+.dictionary-language::after {
+  color: color-mix(in srgb, currentColor 45%, transparent);
+  transition: color 160ms var(--ease);
+}
+
+.dictionary-language:hover .dictionary-language-code,
+.dictionary-language:hover::after,
+.dictionary-language:has(select:focus-visible) .dictionary-language-code,
+.dictionary-language:has(select:focus-visible)::after {
+  color: inherit;
 }
 
 .dictionary-language::after {
@@ -1894,9 +1909,8 @@ button {
   width: 6px;
   height: 6px;
   margin: -3px 1px 0 0;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  opacity: 0.7;
+  border-right: 1px solid;
+  border-bottom: 1px solid;
   transform: rotate(45deg);
 }
 

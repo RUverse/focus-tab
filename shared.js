@@ -26,13 +26,13 @@ export const DEFAULT_DATE_FORMAT = "dddd, MMMM D";
 // Source languages the dictionary gadget can look up; translations are English.
 // English itself gets English definitions.
 export const DICTIONARY_LANGUAGES = Object.freeze([
+  { code: "en", label: "English" },
   { code: "de", label: "German" },
   { code: "fr", label: "French" },
   { code: "es", label: "Spanish" },
   { code: "it", label: "Italian" },
   { code: "nl", label: "Dutch" },
-  { code: "pt", label: "Portuguese" },
-  { code: "en", label: "English" }
+  { code: "pt", label: "Portuguese" }
 ]);
 export const DICTIONARY_HISTORY_MAX = 100;
 export const DICTIONARY_TERM_MAX_CHARS = 500;
