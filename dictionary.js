@@ -1,8 +1,11 @@
 import {
   DICTIONARY_LANGUAGES,
+  DICTIONARY_MIN_HEIGHT,
+  DICTIONARY_MIN_WIDTH,
   addDictionaryEntry,
   dictionaryKey,
   loadSettings,
+  normalizeDictionarySize,
   onSettingsChanged,
   removeDictionaryEntry,
   saveSettings
@@ -14,17 +17,18 @@ const handle = document.getElementById("dictionaryHandle");
 const form = document.getElementById("dictionaryForm");
 const input = document.getElementById("dictionaryInput");
 const languageSelect = document.getElementById("dictionaryLanguage");
+const languageBox = document.getElementById("dictionaryLanguageBox");
+const languageCode = document.getElementById("dictionaryLanguageCode");
 const status = document.getElementById("dictionaryStatus");
 const list = document.getElementById("dictionaryHistory");
-const more = document.getElementById("dictionaryMore");
-const COLLAPSED_COUNT = 3;
+const resizer = document.getElementById("dictionaryResize");
 const EDGE_MARGIN = 8;
 const DEFAULT_POS = { x: 46, y: 96 };
 
 let settings = await loadSettings();
-let expanded = false;
 let pending = false;
 let dragging = null;
+let resizing = null;
 // tone: "busy" while looking up, "error" for problems, "quiet" for a
 // screen-reader-only confirmation of the newest row.
 let message = { text: "", tone: "" };
@@ -40,9 +44,13 @@ function render() {
   if (panel.hidden) return;
   const language = settings.dictionaryLanguage;
   if (document.activeElement !== languageSelect) languageSelect.value = language;
+  // The closed picker shows just the code; its list has the full names.
+  languageCode.textContent = language.toUpperCase();
+  languageBox.title = languageLabel(language);
   input.lang = language;
   renderHistory();
   renderStatus();
+  if (!resizing) applySize(settings.dictionarySize);
   if (!dragging) position(settings.dictionaryPos);
 }
 
@@ -51,23 +59,14 @@ function renderHistory() {
   const focusedKey = list.contains(document.activeElement)
     ? document.activeElement.closest(".dictionary-entry")?.dataset.key
     : "";
-  if (history.length <= COLLAPSED_COUNT) expanded = false;
-
-  const visible = expanded ? history : history.slice(0, COLLAPSED_COUNT);
-  if (visible.length) {
-    list.replaceChildren(...visible.map(renderEntry));
+  if (history.length) {
+    list.replaceChildren(...history.map(renderEntry));
   } else {
     const empty = document.createElement("li");
     empty.className = "dictionary-empty";
     empty.textContent = "Your lookups will appear here.";
     list.replaceChildren(empty);
   }
-  list.classList.toggle("is-expanded", expanded);
-
-  more.hidden = history.length <= COLLAPSED_COUNT;
-  more.textContent = expanded ? "Show recent" : `Show all ${history.length}`;
-  more.setAttribute("aria-expanded", String(expanded));
-
   if (focusedKey) focusEntry(focusedKey);
 }
 
@@ -187,6 +186,7 @@ form.addEventListener("submit", async (event) => {
     const latest = await loadSettings();
     if (await persist({ dictionaryHistory: addDictionaryEntry(latest.dictionaryHistory, entry) })) {
       input.value = "";
+      list.scrollTop = 0;
       setMessage(`${entry.term}: ${entry.translation}`, "quiet");
     }
   }
@@ -202,13 +202,6 @@ input.addEventListener("input", () => {
 languageSelect.addEventListener("change", () => {
   setMessage("");
   persist({ dictionaryLanguage: languageSelect.value });
-});
-
-more.addEventListener("click", () => {
-  expanded = !expanded;
-  renderHistory();
-  list.scrollTop = 0;
-  if (!dragging) position(settings.dictionaryPos);
 });
 
 list.addEventListener("click", async (event) => {
@@ -262,6 +255,56 @@ handle.addEventListener("keydown", (event) => {
   const rect = panel.getBoundingClientRect();
   const step = event.shiftKey ? 40 : 10;
   persist({ dictionaryPos: position({ x: rect.left + direction[0] * step, y: rect.top + direction[1] * step }) });
+});
+
+// A resized box keeps its size, shrunk to fit smaller windows; otherwise the
+// stylesheet's default width and three-row history height apply.
+function applySize(size) {
+  panel.classList.toggle("is-sized", Boolean(size));
+  panel.style.width = size ? `${Math.min(size.width, innerWidth - EDGE_MARGIN * 2)}px` : "";
+  panel.style.height = size ? `${Math.min(size.height, innerHeight - EDGE_MARGIN * 2)}px` : "";
+}
+
+function resizeTo(width, height) {
+  const rect = panel.getBoundingClientRect();
+  const size = normalizeDictionarySize({
+    width: Math.min(width, innerWidth - rect.left - EDGE_MARGIN),
+    height: Math.min(height, innerHeight - rect.top - EDGE_MARGIN)
+  });
+  applySize(size);
+  return size;
+}
+
+resizer.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0) return;
+  const rect = panel.getBoundingClientRect();
+  panel.classList.add("is-resizing");
+  resizing = { x: event.clientX - rect.width, y: event.clientY - rect.height, size: null };
+  resizer.setPointerCapture(event.pointerId);
+  event.preventDefault();
+});
+resizer.addEventListener("pointermove", (event) => {
+  if (resizing) resizing.size = resizeTo(event.clientX - resizing.x, event.clientY - resizing.y);
+});
+function finishResize() {
+  if (!resizing) return;
+  const { size } = resizing;
+  resizing = null;
+  panel.classList.remove("is-resizing");
+  if (size) persist({ dictionarySize: size });
+}
+resizer.addEventListener("pointerup", finishResize);
+resizer.addEventListener("lostpointercapture", finishResize);
+resizer.addEventListener("pointercancel", finishResize);
+resizer.addEventListener("dblclick", () => persist({ dictionarySize: null }));
+resizer.addEventListener("keydown", (event) => {
+  const directions = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+  const direction = directions[event.key];
+  if (!direction) return;
+  event.preventDefault();
+  const rect = panel.getBoundingClientRect();
+  const step = event.shiftKey ? 40 : 10;
+  persist({ dictionarySize: resizeTo(rect.width + direction[0] * step, rect.height + direction[1] * step) });
 });
 
 onSettingsChanged((next) => { settings = next; render(); });

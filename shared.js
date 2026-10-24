@@ -24,13 +24,15 @@ export const DATE_FORMAT_MAX_LENGTH = 80;
 export const DEFAULT_DATE_FORMAT = "dddd, MMMM D";
 
 // Source languages the dictionary gadget can look up; translations are English.
+// English itself gets English definitions.
 export const DICTIONARY_LANGUAGES = Object.freeze([
   { code: "de", label: "German" },
   { code: "fr", label: "French" },
   { code: "es", label: "Spanish" },
   { code: "it", label: "Italian" },
   { code: "nl", label: "Dutch" },
-  { code: "pt", label: "Portuguese" }
+  { code: "pt", label: "Portuguese" },
+  { code: "en", label: "English" }
 ]);
 export const DICTIONARY_HISTORY_MAX = 100;
 export const DICTIONARY_TERM_MAX_CHARS = 500;
@@ -40,6 +42,10 @@ export const DICTIONARY_DEFINITIONS_MAX = 3;
 // Where a row's translation came from: Wiktionary glosses, the browser's
 // on-device translator, or the MyMemory machine-translation fallback.
 export const DICTIONARY_SOURCES = ["wiktionary", "on-device", "mymemory"];
+// Bounds for a dictionary box the user has resized, in CSS pixels.
+export const DICTIONARY_MIN_WIDTH = 260;
+export const DICTIONARY_MIN_HEIGHT = 180;
+export const DICTIONARY_MAX_SIZE = 4000;
 
 // Per-system-theme clock colour used when the user hasn't picked a custom one.
 export const DEFAULT_CLOCK_COLORS = Object.freeze({ dark: "#d7d7d7", light: "#252525" });
@@ -70,6 +76,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   dictionaryEnabled: true,
   dictionaryHidden: true,
   dictionaryPos: null,
+  // null keeps the default width and a height that fits about three rows.
+  dictionarySize: null,
   dictionaryLanguage: "de",
   // Newest first: { lang, term, translation, definitions: [], source, at }.
   dictionaryHistory: [],
@@ -232,6 +240,7 @@ export function normalizeSettings(settings = {}) {
   const dictionaryPos = normalized.dictionaryPos;
   normalized.dictionaryPos = dictionaryPos && Number.isFinite(dictionaryPos.x) && Number.isFinite(dictionaryPos.y)
     ? { x: dictionaryPos.x, y: dictionaryPos.y } : null;
+  normalized.dictionarySize = normalizeDictionarySize(normalized.dictionarySize);
   if (!isDictionaryLanguage(normalized.dictionaryLanguage)) {
     normalized.dictionaryLanguage = DEFAULT_SETTINGS.dictionaryLanguage;
   }
@@ -281,6 +290,14 @@ export function normalizeSettings(settings = {}) {
 
 export function isDictionaryLanguage(code) {
   return DICTIONARY_LANGUAGES.some((language) => language.code === code);
+}
+
+export function normalizeDictionarySize(size) {
+  if (!size || !Number.isFinite(size.width) || !Number.isFinite(size.height)) {
+    return null;
+  }
+  const clamp = (value, min) => Math.round(Math.min(Math.max(value, min), DICTIONARY_MAX_SIZE));
+  return { width: clamp(size.width, DICTIONARY_MIN_WIDTH), height: clamp(size.height, DICTIONARY_MIN_HEIGHT) };
 }
 
 export function dictionaryKey(lang, term) {

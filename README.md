@@ -93,17 +93,20 @@ leaves website blocking enabled. Pomodoro breaks do not unblock websites.
 
 Show the dictionary with its icon beside the settings gear, or switch it on or
 off in **Settings → Gadgets → Dictionary**. Pick the language you are reading
-(German, French, Spanish, Italian, Dutch, or Portuguese), type a word or phrase,
-and press Enter. Each result row shows the word, its English translation, and
-a definition in the original language below. The gadget shows the three newest
-lookups; **Show all** expands it into a scrollable history of up to 100 lookups.
+with the language code beside the box (German, French, Spanish, Italian, Dutch,
+Portuguese, or English), type a word or phrase, and press Enter. Each result row
+shows the word, its English translation, and a definition in the original
+language below. English words show their parts of speech and English
+definitions instead. The history scrolls and keeps up to 100 lookups; drag the
+bottom-right corner to resize the box (double-click the corner to reset it).
 Looking up a saved word again moves it to the top without going online. Hover
 or focus a row to remove it.
 
 - Words and short set phrases (up to three words) are looked up on
   [Wiktionary](https://www.wiktionary.org/): English glosses come from English
   Wiktionary, and definitions from the Wiktionary edition in that language.
-- Sentences, and words with no English Wiktionary entry, are machine translated.
+- English lookups use English Wiktionary only; sentences are not translated.
+- Other sentences, and words with no English Wiktionary entry, are machine translated.
   Chrome uses its built-in on-device Translator when the language model is
   installed; the first lookup starts downloading it. Otherwise the text is sent
   to the free [MyMemory](https://mymemory.translated.net/) API, about 5,000

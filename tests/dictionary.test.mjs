@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   DICTIONARY_HISTORY_MAX,
+  DICTIONARY_MAX_SIZE,
+  DICTIONARY_MIN_WIDTH,
   addDictionaryEntry,
   normalizeSettings,
   removeDictionaryEntry
@@ -10,6 +12,7 @@ import {
   LookupError,
   cleanWikitext,
   lookupTerm,
+  parseEnglishDefinitions,
   parseEnglishGlosses,
   parseNativeDefinitions,
   pickMyMemoryTranslation,
@@ -23,6 +26,18 @@ test("dictionary settings default to German with an empty history", () => {
   assert.equal(settings.dictionaryLanguage, "de");
   assert.deepEqual(settings.dictionaryHistory, []);
   assert.equal(settings.dictionaryPos, null);
+  assert.equal(settings.dictionarySize, null);
+  assert.equal(normalizeSettings({ dictionaryLanguage: "en" }).dictionaryLanguage, "en");
+});
+
+test("a resized dictionary box keeps a whole-pixel size within bounds", () => {
+  assert.deepEqual(normalizeSettings({ dictionarySize: { width: 400.6, height: 520.2 } }).dictionarySize, { width: 401, height: 520 });
+  assert.deepEqual(
+    normalizeSettings({ dictionarySize: { width: 10, height: 99999 } }).dictionarySize,
+    { width: DICTIONARY_MIN_WIDTH, height: DICTIONARY_MAX_SIZE }
+  );
+  assert.equal(normalizeSettings({ dictionarySize: { width: "400", height: 300 } }).dictionarySize, null);
+  assert.equal(normalizeSettings({ dictionarySize: { width: 400 } }).dictionarySize, null);
 });
 
 test("dictionary settings tolerate malformed storage", () => {
@@ -299,4 +314,51 @@ test("network failures and empty input give readable errors", async () => {
     lookupTerm("ä".repeat(300), "de", { fetchImpl, translatorApi: null }),
     (error) => error.code === "too-long"
   );
+});
+
+test("English definitions take each part of speech in turn and skip codes", () => {
+  const json = {
+    en: [
+      { partOfSpeech: "Symbol", definitions: [{ definition: "<i>ISO 639-2</i> code for Rundi" }] },
+      {
+        partOfSpeech: "Verb",
+        definitions: [
+          { definition: 'To move <a href="/wiki/swiftly">swiftly</a>.<ol><li>To move forward quickly</li></ol>' },
+          { definition: "(intransitive) To flee ; to escape." }
+        ]
+      },
+      { partOfSpeech: "Noun", definitions: [{ definition: "Act or instance of running." }, { definition: "A trip." }] }
+    ],
+    fr: [{ partOfSpeech: "Noun", definitions: [{ definition: "French sense" }] }]
+  };
+  assert.deepEqual(parseEnglishDefinitions(json), {
+    definitions: ["To move swiftly.", "Act or instance of running.", "(intransitive) To flee; to escape."],
+    partsOfSpeech: ["verb", "noun"]
+  });
+  const codeOnly = { en: [{ partOfSpeech: "Symbol", definitions: [{ definition: "code for Rundi" }] }] };
+  assert.deepEqual(parseEnglishDefinitions(codeOnly), { definitions: ["code for Rundi"], partsOfSpeech: ["symbol"] });
+  assert.deepEqual(parseEnglishDefinitions({ de: [] }), { definitions: [], partsOfSpeech: [] });
+});
+
+test("English lookups use only English Wiktionary", async () => {
+  const { fetchImpl, calls } = fakeFetch([
+    [/en\.wiktionary\.org.*definition\/Serendipity$/, {}],
+    [/en\.wiktionary\.org.*definition\/serendipity$/, { en: [{ partOfSpeech: "Noun", definitions: [{ definition: "A fortunate discovery by chance." }] }] }]
+  ]);
+  const translatorApi = { availability: async () => assert.fail("should not translate") };
+  const result = await lookupTerm("Serendipity", "en", { fetchImpl, translatorApi, now: 3 });
+  assert.deepEqual(result, {
+    lang: "en", term: "serendipity", translation: "noun", definitions: ["A fortunate discovery by chance."], source: "wiktionary", at: 3
+  });
+  assert.ok(calls.every(({ url }) => url.startsWith("https://en.wiktionary.org/")));
+});
+
+test("English sentences and unknown words are not sent to a translator", async () => {
+  const { fetchImpl, calls } = fakeFetch([]);
+  await assert.rejects(lookupTerm("this is a whole sentence", "en", { fetchImpl, translatorApi: null }), (error) => error.code === "no-definition");
+  assert.equal(calls.length, 0);
+  await assert.rejects(lookupTerm("xqzvbn", "en", { fetchImpl, translatorApi: null }), (error) => error.code === "no-definition");
+  assert.ok(calls.every(({ url }) => !url.includes("mymemory")));
+  const offline = fakeFetch([[/./, new TypeError("Failed to fetch")]]);
+  await assert.rejects(lookupTerm("house", "en", { fetchImpl: offline.fetchImpl, translatorApi: null }), (error) => error.code === "unavailable");
 });

@@ -128,14 +128,17 @@
         <button type="button" class="dictionary-handle" id="dictionaryHandle" aria-label="Move dictionary. Use arrow keys to move." title="Drag to move, or use arrow keys"></button>
         <form class="dictionary-form" id="dictionaryForm" role="search" aria-label="Look up a word or phrase">
           <input class="dictionary-input" id="dictionaryInput" type="text" maxlength="500" placeholder="Word or phrase" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-describedby="dictionaryStatus">
-          <select class="dictionary-language" id="dictionaryLanguage" aria-label="Language to translate from"></select>
+          <span class="dictionary-language ui-control" id="dictionaryLanguageBox">
+            <span class="dictionary-language-code" id="dictionaryLanguageCode" aria-hidden="true"></span>
+            <select id="dictionaryLanguage" aria-label="Language to look up"></select>
+          </span>
         </form>
         <p class="dictionary-status" id="dictionaryStatus" role="status" aria-live="polite"></p>
         <ol class="dictionary-history" id="dictionaryHistory" aria-label="Lookup history"></ol>
         <div class="dictionary-footer">
-          <button type="button" class="dictionary-more" id="dictionaryMore" aria-expanded="false" aria-controls="dictionaryHistory" hidden></button>
           <span class="dictionary-credit">Words from <a href="https://www.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a></span>
         </div>
+        <button type="button" class="dictionary-resize" id="dictionaryResize" aria-label="Resize dictionary. Use arrow keys to resize." title="Drag to resize, double-click to reset"></button>
       </section>
 
       <div class="gadget-toolbar" role="group" aria-label="Gadget visibility and settings">

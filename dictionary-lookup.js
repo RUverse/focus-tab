@@ -1,6 +1,7 @@
 // Network lookups for the dictionary gadget. Only the text the user submits is
 // sent: words to Wiktionary, and phrases to the browser's on-device translator
-// or, where that is unavailable, the MyMemory translation API.
+// or, where that is unavailable, the MyMemory translation API. English lookups
+// only use English Wiktionary.
 import { DICTIONARY_DEFINITIONS_MAX, DICTIONARY_DEFINITION_MAX_CHARS, DICTIONARY_TERM_MAX_CHARS } from "./shared.js";
 
 const REQUEST_TIMEOUT_MS = 8000;
@@ -41,6 +42,7 @@ const MESSAGES = {
   offline: "You're offline. Try again once you're connected.",
   unavailable: "The dictionary isn't responding right now. Try again later.",
   "not-found": "No translation found. Check the spelling or language.",
+  "no-definition": "No English definition found. Check the spelling, or try a single word.",
   quota: "The translation service's daily limit is used up. Try again tomorrow.",
   "too-long": "That's too long to translate. Try a shorter phrase."
 };
@@ -64,6 +66,11 @@ export async function lookupTerm(input, lang, options = {}) {
     throw new LookupError("empty");
   }
 
+  const now = options.now ?? Date.now();
+  if (lang === "en") {
+    return lookupEnglish(text, fetchImpl, now);
+  }
+
   let english = null;
   let native = null;
   if (isDictionaryCandidate(text)) {
@@ -82,7 +89,7 @@ export async function lookupTerm(input, lang, options = {}) {
     lang,
     term: native?.title || english?.title || text,
     definitions: native?.definitions || [],
-    at: options.now ?? Date.now()
+    at: now
   };
 
   if (english) {
@@ -96,6 +103,30 @@ export async function lookupTerm(input, lang, options = {}) {
     throw new LookupError("not-found");
   }
   return { ...entry, ...translated };
+}
+
+// English has nothing to translate: its own Wiktionary entry gives the parts
+// of speech, shown where other languages show the translation, and definitions.
+async function lookupEnglish(text, fetchImpl, now) {
+  let found = null;
+  if (isDictionaryCandidate(text)) {
+    try {
+      found = await findEnglishDefinitions(titleVariants(text), fetchImpl);
+    } catch {
+      throw new LookupError(isOffline() ? "offline" : "unavailable");
+    }
+  }
+  if (!found) {
+    throw new LookupError("no-definition");
+  }
+  return {
+    lang: "en",
+    term: found.title,
+    translation: found.partsOfSpeech.join(", "),
+    definitions: found.definitions,
+    source: "wiktionary",
+    at: now
+  };
 }
 
 function sameText(a, b) {
@@ -114,12 +145,25 @@ export function titleVariants(text) {
   return [...new Set([text, capitalized, text.toLocaleLowerCase()])];
 }
 
+function englishDefinitionUrl(title) {
+  return `https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+}
+
 async function findEnglishGlosses(titles, lang, fetchImpl) {
   for (const title of titles) {
-    const url = `https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(title.replace(/ /g, "_"))}`;
-    const glosses = parseEnglishGlosses(await getJson(url, fetchImpl, WIKIMEDIA_HEADERS), lang);
+    const glosses = parseEnglishGlosses(await getJson(englishDefinitionUrl(title), fetchImpl, WIKIMEDIA_HEADERS), lang);
     if (glosses.length) {
       return { title, glosses };
+    }
+  }
+  return null;
+}
+
+async function findEnglishDefinitions(titles, fetchImpl) {
+  for (const title of titles) {
+    const found = parseEnglishDefinitions(await getJson(englishDefinitionUrl(title), fetchImpl, WIKIMEDIA_HEADERS));
+    if (found.definitions.length) {
+      return { title, ...found };
     }
   }
   return null;
@@ -161,37 +205,75 @@ async function getJson(url, fetchImpl, headers = {}) {
 // serve as the translation. Take each part of speech's leading senses first,
 // and skip "inflection of …" senses unless the word has nothing else.
 export function parseEnglishGlosses(json, lang) {
-  const entries = Array.isArray(json?.[lang]) ? json[lang] : [];
   // Place names and surnames ("Haus, a municipality of Styria") only when the
   // word has no ordinary entry.
-  const common = entries.filter((entry) => !/proper noun/i.test(entry?.partOfSpeech || ""));
-  const sections = common.length ? common : entries;
-  const all = sections.map((section) => (Array.isArray(section?.definitions) ? section.definitions : [])
-    .map((definition) => readGloss(definition?.definition))
-    .filter((gloss) => gloss.text));
-  const senses = all.map((list) => list.filter((gloss) => !gloss.formOf));
-  const lists = senses.some((list) => list.length) ? senses : all;
+  const sections = preferredSections(json?.[lang], /proper noun/i);
+  const lists = withoutFormOf(sections.map((section) => sectionSenses(section, readGloss)));
+  // One gloss may list several senses ("to walk; to jog; to run").
+  return interleave(lists, GLOSSES_MAX, (gloss) => gloss.text.split(";")).map(({ text }) => text);
+}
 
-  const glosses = [];
+// English words get full definitions and the parts of speech they come from.
+export function parseEnglishDefinitions(json) {
+  // Skip "RUN, ISO 639-2 code for Rundi" and similar unless that is all.
+  const sections = preferredSections(json?.en, /proper noun|symbol|letter|abbreviation|initialism|acronym/i);
+  const lists = withoutFormOf(sections.map((section) => sectionSenses(section, readDefinition)
+    .map((sense) => ({ ...sense, partOfSpeech: String(section?.partOfSpeech || "").trim().toLocaleLowerCase() }))));
+  const picked = interleave(lists, DICTIONARY_DEFINITIONS_MAX, (sense) => [sense.text]);
+  return {
+    definitions: picked.map(({ text }) => text),
+    partsOfSpeech: [...new Set(picked.map(({ sense }) => sense.partOfSpeech).filter(Boolean))]
+  };
+}
+
+function preferredSections(entries, skip) {
+  const sections = Array.isArray(entries) ? entries : [];
+  const common = sections.filter((entry) => !skip.test(entry?.partOfSpeech || ""));
+  return common.length ? common : sections;
+}
+
+function sectionSenses(section, read) {
+  return (Array.isArray(section?.definitions) ? section.definitions : [])
+    .map((definition) => read(definition?.definition))
+    .filter((sense) => sense.text);
+}
+
+function withoutFormOf(lists) {
+  const senses = lists.map((list) => list.filter((sense) => !sense.formOf));
+  return senses.some((list) => list.length) ? senses : lists;
+}
+
+// Take the first sense of every part of speech, then the second, and so on,
+// skipping repeats, until `max` texts are picked.
+function interleave(lists, max, split) {
+  const picked = [];
   const seen = new Set();
-  for (let index = 0; glosses.length < GLOSSES_MAX && lists.some((list) => index < list.length); index += 1) {
+  for (let index = 0; picked.length < max && lists.some((list) => index < list.length); index += 1) {
     for (const list of lists) {
-      // One gloss may list several senses ("to walk; to jog; to run").
-      for (const part of list[index]?.text.split(";") || []) {
+      const sense = list[index];
+      for (const part of sense ? split(sense) : []) {
         const text = part.trim();
-        if (text && !seen.has(text.toLocaleLowerCase()) && glosses.length < GLOSSES_MAX) {
+        if (text && !seen.has(text.toLocaleLowerCase()) && picked.length < max) {
           seen.add(text.toLocaleLowerCase());
-          glosses.push(text);
+          picked.push({ text, sense });
         }
       }
     }
   }
-  return glosses;
+  return picked;
+}
+
+// Nested lists hold sub-senses and the detail of form-of entries.
+function leadMarkup(html) {
+  return String(html ?? "").replace(/<(ol|ul|dl)\b[\s\S]*$/i, "");
+}
+
+function isFormOf(markup, text) {
+  return /form-of-definition/.test(markup) || FORM_OF.test(text);
 }
 
 function readGloss(html) {
-  // Nested lists hold sub-senses and the detail of form-of entries.
-  const markup = String(html ?? "").replace(/<(ol|ul|dl)\b[\s\S]*$/i, "");
+  const markup = leadMarkup(html);
   const text = htmlToText(markup);
   // Drop usage labels and notes such as "(transitive)" or "[auxiliary avere]",
   // unless that is all there is.
@@ -201,8 +283,14 @@ function readGloss(html) {
     .trim();
   return {
     text: truncate((withoutNotes || text).replace(/[.:]$/, ""), GLOSS_MAX_CHARS),
-    formOf: /form-of-definition/.test(markup) || FORM_OF.test(text)
+    formOf: isFormOf(markup, text)
   };
+}
+
+function readDefinition(html) {
+  const markup = leadMarkup(html);
+  const text = htmlToText(markup).replace(/\s+([,.;:)])/g, "$1").replace(/\(\s+/g, "(").replace(/:$/, "");
+  return { text: truncate(text, DICTIONARY_DEFINITION_MAX_CHARS), formOf: isFormOf(markup, text) };
 }
 
 export function parseNativeDefinitions(lang, wikitext, term = "") {
