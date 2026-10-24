@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { build as bundle } from "esbuild";
+import { DICTIONARY_DATA_COLLECTION } from "./shared.js";
 
 const execFileP = promisify(execFile);
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -60,14 +61,15 @@ function firefoxManifest(base) {
 
   // AMO requires a stable add-on id and benefits from a pinned floor version.
   // data_collection_permissions is mandatory for new submissions since
-  // 2025-11-03 (and recognized from Firefox 140+); "none" declares the add-on
-  // collects no user data, matching this extension's local-only storage
-  // behavior (see PRIVACY.md).
+  // 2025-11-03 (and recognized from Firefox 140+). Nothing is required: the
+  // extension works offline. The optional dictionary gadget sends the words a
+  // user looks up to Wiktionary or a translation service, so it asks for the
+  // optional "searchTerms" consent before its first lookup (see PRIVACY.md).
   m.browser_specific_settings = {
     gecko: {
       id: GECKO_ID,
       strict_min_version: FIREFOX_MIN_VERSION,
-      data_collection_permissions: { required: ["none"] },
+      data_collection_permissions: { required: ["none"], optional: [DICTIONARY_DATA_COLLECTION] },
     },
   };
 

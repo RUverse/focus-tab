@@ -1,7 +1,7 @@
 # Privacy Policy
 
 **Extension:** New Tab Focus Clock (Focus Tab)
-**Last updated:** October 19, 2026
+**Last updated:** October 24, 2026
 
 ## Summary
 
@@ -43,6 +43,11 @@ it sends only that text and the language you selected:
 - **MyMemory** (Translated srl): otherwise, sentences and words that
   Wiktionary cannot translate are sent to `api.mymemory.translated.net`.
   [Translated privacy policy](https://translated.com/privacy)
+
+In Firefox, the extension declares this as optional "search terms" data
+collection. Firefox asks for your permission the first time you look up a new
+word, and nothing is sent unless you allow it. You can turn the permission off
+again in `about:addons` under the extension's **Permissions and data**.
 
 Requests are sent without cookies or a referrer. No browsing data, settings,
 block lists, notes, or identifiers are included. Your lookup history stays in
