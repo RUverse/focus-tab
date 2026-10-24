@@ -1985,22 +1985,38 @@ button {
 .dictionary.is-sized .dictionary-history { max-height: none; }
 
 .dictionary-entry {
+  position: relative;
   padding: 8px 0;
   border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 }
 
 .dictionary-entry:first-child { border-top: 0; }
 
-.dictionary-entry-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: baseline;
+/* The translation starts at the middle column when it fits beside the word
+   on one line; otherwise it moves below and uses the full width. The float
+   keeps only the first line clear of the remove button. */
+.dictionary-entry-head::before {
+  content: "";
+  float: right;
+  width: 24px;
+  height: 1em;
+}
+
+.dictionary-term,
+.dictionary-translation {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: top;
+  overflow-wrap: anywhere;
 }
 
 .dictionary-term {
+  /* Half of the width left beside the remove button. */
+  min-width: calc(50% - 17px);
+  max-width: calc(100% - 24px);
+  /* With the space after it, about 10px before the translation. */
+  margin-right: 6px;
   font-weight: 700;
-  overflow-wrap: anywhere;
 }
 
 .dictionary-entry-lang {
@@ -2011,17 +2027,14 @@ button {
   text-decoration: none;
 }
 
-.dictionary-translation {
-  overflow-wrap: anywhere;
-}
-
 .dictionary-remove {
+  position: absolute;
+  top: 6px;
+  right: -4px;
   display: grid;
   place-items: center;
-  align-self: start;
   width: 22px;
   height: 22px;
-  margin: -2px -4px 0 0;
   padding: 0;
   color: inherit;
   cursor: pointer;

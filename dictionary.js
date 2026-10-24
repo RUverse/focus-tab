@@ -105,7 +105,8 @@ function renderEntry(entry) {
   remove.title = "Remove from history";
   remove.innerHTML = '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true" focusable="false"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 
-  head.append(term, translation, remove);
+  // The space keeps copied text and screen readers from running the two together.
+  head.append(term, " ", translation, remove);
   item.append(head);
 
   if (entry.definitions.length) {
