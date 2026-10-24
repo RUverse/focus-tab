@@ -113,6 +113,9 @@ or focus a row to remove it.
   characters a day, and the row is marked as a machine translation.
 - Lookups that fail (no match, offline, or the service is down) show a message
   under the box and are not saved.
+- Firefox asks for permission to send lookups (optional "search terms" data
+  collection) the first time you look up a new word; nothing is sent until you
+  allow it.
 
 The history is stored with your other settings in `chrome.storage.local`. Drag
 the line handle, or focus it and use the arrow keys, to move the gadget.
@@ -148,7 +151,8 @@ The published packages are produced from the source in this repository by
 compact-config adapter, and Moment.js date formatter, which are bundled locally.
 The script also generates `manifest.json` for each target (the Firefox build
 swaps the background to module scripts and adds the
-`browser_specific_settings.gecko` block).
+`browser_specific_settings.gecko` block, which declares no required data
+collection and optional `searchTerms` for dictionary lookups).
 
 ### Build environment
 

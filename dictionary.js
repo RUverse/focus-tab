@@ -10,7 +10,7 @@ import {
   removeDictionaryEntry,
   saveSettings
 } from "./shared.js";
-import { LookupError, lookupTerm } from "./dictionary-lookup.js";
+import { LookupError, lookupTerm, readLookupConsent, requestLookupConsent } from "./dictionary-lookup.js";
 
 const panel = document.getElementById("dictionary");
 const handle = document.getElementById("dictionaryHandle");
@@ -26,6 +26,9 @@ const EDGE_MARGIN = 8;
 const DEFAULT_POS = { x: 46, y: 96 };
 
 let settings = await loadSettings();
+const permissions = globalThis.chrome?.permissions;
+// Whether this browser asks for consent before lookups go online (Firefox).
+const asksConsent = await readLookupConsent(permissions) !== "unsupported";
 let pending = false;
 let dragging = null;
 let resizing = null;
@@ -168,15 +171,20 @@ form.addEventListener("submit", async (event) => {
   }
 
   const lang = settings.dictionaryLanguage;
+  // Looking up a word again moves the saved row to the top without a request.
+  const key = dictionaryKey(lang, text);
+  const saved = settings.dictionaryHistory.find((item) => dictionaryKey(item.lang, item.term) === key);
+  // Firefox only shows its consent prompt for a request made straight from the
+  // submit, so ask before anything is awaited. Once granted it resolves at once.
+  const consent = saved || !asksConsent ? null : requestLookupConsent(permissions);
   pending = true;
   panel.setAttribute("aria-busy", "true");
   setMessage("Looking up…", "busy");
   let entry = null;
   try {
-    // Looking up a word again moves the saved row to the top without a request.
-    const current = await loadSettings();
-    const key = dictionaryKey(lang, text);
-    const saved = current.dictionaryHistory.find((item) => dictionaryKey(item.lang, item.term) === key);
+    if (consent && !(await consent)) {
+      throw new LookupError("consent");
+    }
     entry = saved ? { ...saved, at: Date.now() } : await lookupTerm(text, lang);
   } catch (error) {
     setMessage(error instanceof LookupError ? error.message : "Something went wrong. Please try again.", "error");

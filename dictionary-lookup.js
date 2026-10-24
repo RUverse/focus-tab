@@ -2,7 +2,12 @@
 // sent: words to Wiktionary, and phrases to the browser's on-device translator
 // or, where that is unavailable, the MyMemory translation API. English lookups
 // only use English Wiktionary.
-import { DICTIONARY_DEFINITIONS_MAX, DICTIONARY_DEFINITION_MAX_CHARS, DICTIONARY_TERM_MAX_CHARS } from "./shared.js";
+import {
+  DICTIONARY_DATA_COLLECTION,
+  DICTIONARY_DEFINITIONS_MAX,
+  DICTIONARY_DEFINITION_MAX_CHARS,
+  DICTIONARY_TERM_MAX_CHARS
+} from "./shared.js";
 
 const REQUEST_TIMEOUT_MS = 8000;
 // How long to wait for an installed on-device model before falling back.
@@ -44,8 +49,34 @@ const MESSAGES = {
   "not-found": "No translation found. Check the spelling or language.",
   "no-definition": "No English definition found. Check the spelling, or try a single word.",
   quota: "The translation service's daily limit is used up. Try again tomorrow.",
-  "too-long": "That's too long to translate. Try a shorter phrase."
+  "too-long": "That's too long to translate. Try a shorter phrase.",
+  consent: "Lookups need your permission to send the word to Wiktionary or a translation service."
 };
+
+// Firefox asks users before an add-on sends what they type to other services.
+// Resolves to "unsupported" where the browser has no such consent (Chrome),
+// otherwise "granted" or "missing".
+export async function readLookupConsent(permissions) {
+  try {
+    const all = await permissions?.getAll?.();
+    if (!Array.isArray(all?.data_collection)) {
+      return "unsupported";
+    }
+    return all.data_collection.includes(DICTIONARY_DATA_COLLECTION) ? "granted" : "missing";
+  } catch {
+    return "unsupported";
+  }
+}
+
+// Shows Firefox's consent prompt. Call it directly from the user's submit,
+// before any await, or Firefox refuses to show the prompt.
+export async function requestLookupConsent(permissions) {
+  try {
+    return Boolean(await permissions.request({ data_collection: [DICTIONARY_DATA_COLLECTION] }));
+  } catch {
+    return false;
+  }
+}
 
 export class LookupError extends Error {
   constructor(code) {

@@ -16,6 +16,8 @@ import {
   parseEnglishGlosses,
   parseNativeDefinitions,
   pickMyMemoryTranslation,
+  readLookupConsent,
+  requestLookupConsent,
   titleVariants
 } from "../dictionary-lookup.js";
 
@@ -361,4 +363,19 @@ test("English sentences and unknown words are not sent to a translator", async (
   assert.ok(calls.every(({ url }) => !url.includes("mymemory")));
   const offline = fakeFetch([[/./, new TypeError("Failed to fetch")]]);
   await assert.rejects(lookupTerm("house", "en", { fetchImpl: offline.fetchImpl, translatorApi: null }), (error) => error.code === "unavailable");
+});
+
+test("Firefox consent is read from data_collection and requested for searchTerms", async () => {
+  assert.equal(await readLookupConsent(undefined), "unsupported");
+  assert.equal(await readLookupConsent({ getAll: async () => ({ permissions: [], origins: [] }) }), "unsupported");
+  assert.equal(await readLookupConsent({ getAll: async () => ({ data_collection: [] }) }), "missing");
+  assert.equal(await readLookupConsent({ getAll: async () => ({ data_collection: ["searchTerms"] }) }), "granted");
+  assert.equal(await readLookupConsent({ getAll: async () => { throw new Error("no"); } }), "unsupported");
+
+  const requests = [];
+  const permissions = { request: async (request) => { requests.push(request); return true; } };
+  assert.equal(await requestLookupConsent(permissions), true);
+  assert.deepEqual(requests, [{ data_collection: ["searchTerms"] }]);
+  assert.equal(await requestLookupConsent({ request: async () => false }), false);
+  assert.equal(await requestLookupConsent({ request: async () => { throw new Error("not from a user action"); } }), false);
 });

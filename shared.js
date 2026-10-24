@@ -42,6 +42,9 @@ export const DICTIONARY_DEFINITIONS_MAX = 3;
 // Where a row's translation came from: Wiktionary glosses, the browser's
 // on-device translator, or the MyMemory machine-translation fallback.
 export const DICTIONARY_SOURCES = ["wiktionary", "on-device", "mymemory"];
+// Firefox data-collection type the dictionary asks consent for before sending
+// a lookup; the Firefox manifest declares it as optional.
+export const DICTIONARY_DATA_COLLECTION = "searchTerms";
 // Bounds for a dictionary box the user has resized, in CSS pixels.
 export const DICTIONARY_MIN_WIDTH = 260;
 export const DICTIONARY_MIN_HEIGHT = 180;
