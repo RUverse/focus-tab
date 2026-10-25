@@ -4,6 +4,7 @@ import {
   saveSettings,
   getFocusState,
   getPomodoroState,
+  pomodoroDuration,
   DISTRACTION_MIN_MINUTES,
   DISTRACTION_MAX_MINUTES,
   MAX_RECENT_REASONS
@@ -46,6 +47,7 @@ const DIAL_CIRCUMFERENCE = 2 * Math.PI * DIAL_RADIUS;
 const MIN_REASON_LENGTH = 10;
 const MIN_REASON_WORDS = 3;
 const BREAK_DELAY_SECONDS = [5, 15, 120, 300, 600];
+const POMODORO_BREAK_MESSAGES = ["Well done.", "Nice work.", "You earned a breather.", "Time to recharge."];
 
 let settings = await loadSettings();
 let selectedMinutes = 10;
@@ -128,7 +130,14 @@ function render() {
   const state = getFocusState(settings, now);
   focusEl.dataset.state = state;
   const pomodoro = getPomodoroState(settings.pomodoro, now);
-  const label = pomodoro.phase === "focus" && pomodoro.endsAt ? "Focused." : "No distractions.";
+  const focusInterval = pomodoro.phase === "focus";
+  const pomodoroInProgress = settings.pomodoroEnabled &&
+    Boolean(pomodoro.endsAt || pomodoro.remainingMs < pomodoroDuration(pomodoro.phase));
+  distractionOpenBtn.hidden = pomodoroInProgress && focusInterval;
+  // Keep the same encouragement throughout a break, including after reload.
+  const breakMessage = POMODORO_BREAK_MESSAGES[Math.max(0, pomodoro.completedSessions - 1) % POMODORO_BREAK_MESSAGES.length];
+  const label = !pomodoroInProgress ? "No distractions."
+    : !focusInterval ? breakMessage : pomodoro.endsAt ? "Focused." : "No distractions.";
   if (focusStatus.textContent !== label) focusStatus.textContent = label;
 
   if (state === "distracted") {
