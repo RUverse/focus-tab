@@ -22,6 +22,10 @@ A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab ex
 - **Distraction breaks**: from the focused view, open the break picker and drag
   the dial to set 1 minute – 4 hours. During a break the blocked sites open
   normally and the new tab shows a `DISTRACTED` indicator counting down.
+- **Lock content breaks**: pick days and a time range (for example Monday to
+  Friday, 8 AM to 6 PM) under **Settings → Block list**. During those hours the
+  "Let's consume some content" break shows a lock icon, can't be started, and
+  its tooltip says when it unlocks. Moving and meditating stay available.
 - **For later**: when a tab is parked on the focus page by the blocker, it shows
   the blocked page's title (falling back to its host) and sets the tab title to
   match, so blocked tabs stay identifiable in the tab strip. The original page
@@ -63,6 +67,10 @@ into pages and broad host access.
 - Starting a break sets `distractionUntil`; the background worker drops the
   blocking rules until it elapses, then restores them automatically.
 - Clicking **No distractions** during a break ends it early and resumes blocking.
+- **Lock content breaks** stores the selected weekdays and a From/To time. A
+  "To" earlier than "From" runs overnight into the next day, and equal times
+  lock the whole day. A content break started before the lock begins keeps
+  running until its timer ends.
 
 Spinner, sticky note, Pomodoro, and dictionary are enabled but hidden by default.
 Use their bottom icons to show them. Enabled gadgets have visibility buttons beside
