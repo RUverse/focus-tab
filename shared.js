@@ -15,6 +15,18 @@ export const WAVE_BACKGROUNDS = [
 
 export const DISTRACTION_MIN_MINUTES = 1;
 export const DISTRACTION_MAX_MINUTES = 240;
+
+// Weekdays as Date#getDay() numbers, listed Monday first for display.
+export const SCHEDULE_DAYS = Object.freeze([
+  { day: 1, short: "Mon", long: "Monday" },
+  { day: 2, short: "Tue", long: "Tuesday" },
+  { day: 3, short: "Wed", long: "Wednesday" },
+  { day: 4, short: "Thu", long: "Thursday" },
+  { day: 5, short: "Fri", long: "Friday" },
+  { day: 6, short: "Sat", long: "Saturday" },
+  { day: 0, short: "Sun", long: "Sunday" }
+]);
+const MINUTES_PER_DAY = 24 * 60;
 export const STICKY_NOTE_MAX_CHARS = 2000;
 export const FIDGET_SCALE_MIN = 1;
 export const FIDGET_SCALE_MAX = 4;
@@ -22,6 +34,33 @@ export const FIDGET_SCALE_STEP = 0.01;
 export const CUSTOM_WAVE_CONFIG_MAX_LENGTH = 4096;
 export const DATE_FORMAT_MAX_LENGTH = 80;
 export const DEFAULT_DATE_FORMAT = "dddd, MMMM D";
+
+// Source languages the dictionary gadget can look up; translations are English.
+// English itself gets English definitions.
+export const DICTIONARY_LANGUAGES = Object.freeze([
+  { code: "en", label: "English" },
+  { code: "de", label: "German" },
+  { code: "fr", label: "French" },
+  { code: "es", label: "Spanish" },
+  { code: "it", label: "Italian" },
+  { code: "nl", label: "Dutch" },
+  { code: "pt", label: "Portuguese" }
+]);
+export const DICTIONARY_HISTORY_MAX = 100;
+export const DICTIONARY_TERM_MAX_CHARS = 500;
+export const DICTIONARY_TRANSLATION_MAX_CHARS = 1000;
+export const DICTIONARY_DEFINITION_MAX_CHARS = 400;
+export const DICTIONARY_DEFINITIONS_MAX = 3;
+// Where a row's translation came from: Wiktionary glosses, the browser's
+// on-device translator, or the MyMemory machine-translation fallback.
+export const DICTIONARY_SOURCES = ["wiktionary", "on-device", "mymemory"];
+// Firefox data-collection type the dictionary asks consent for before sending
+// a lookup; the Firefox manifest declares it as optional.
+export const DICTIONARY_DATA_COLLECTION = "searchTerms";
+// Bounds for a dictionary box the user has resized, in CSS pixels.
+export const DICTIONARY_MIN_WIDTH = 260;
+export const DICTIONARY_MIN_HEIGHT = 180;
+export const DICTIONARY_MAX_SIZE = 4000;
 
 // Per-system-theme clock colour used when the user hasn't picked a custom one.
 export const DEFAULT_CLOCK_COLORS = Object.freeze({ dark: "#d7d7d7", light: "#252525" });
@@ -45,9 +84,18 @@ export const DEFAULT_SETTINGS = Object.freeze({
   // Where the user last dropped the sticky note list, or null for its default spot.
   stickyNoteListPos: null,
   pomodoroEnabled: true,
+  pomodoroSessionGoal: 6,
   pomodoroHidden: true,
   pomodoroPos: null,
-  pomodoro: { phase: "focus", remainingMs: 25 * 60 * 1000, endsAt: 0 },
+  pomodoro: { phase: "focus", remainingMs: 25 * 60 * 1000, endsAt: 0, completedSessions: 0 },
+  dictionaryEnabled: true,
+  dictionaryHidden: true,
+  dictionaryPos: null,
+  // null keeps the default width and a height that fits about three rows.
+  dictionarySize: null,
+  dictionaryLanguage: "de",
+  // Newest first: { lang, term, translation, definitions: [], source, at }.
+  dictionaryHistory: [],
   fidgetScale: 2,
   motivationalQuoteEnabled: true,
   waveBackground: "mood",
@@ -56,6 +104,9 @@ export const DEFAULT_SETTINGS = Object.freeze({
   focusActive: false,
   distractionUntil: 0,
   contentBreakDelayEnabled: true,
+  // Days (Date#getDay numbers) and minutes after midnight when content breaks
+  // can't be started. An end before the start runs overnight; equal is all day.
+  contentBreakLock: { enabled: false, days: [1, 2, 3, 4, 5], start: 8 * 60, end: 18 * 60 },
   recentReasons: [],
   contentBreaksToday: {
     day: "",
@@ -181,7 +232,7 @@ export function normalizeSettings(settings = {}) {
       ? { x: Number(pos.x), y: Number(pos.y) }
       : null;
 
-  for (const key of ["fidgetHidden", "stickyNoteListHidden", "pomodoroHidden"]) {
+  for (const key of ["fidgetHidden", "stickyNoteListHidden", "pomodoroHidden", "dictionaryHidden"]) {
     normalized[key] = normalized[key] === true;
   }
 
@@ -197,9 +248,21 @@ export function normalizeSettings(settings = {}) {
 
   normalized.pomodoroEnabled = normalized.pomodoroEnabled === true;
   normalized.pomodoro = normalizePomodoro(normalized.pomodoro);
+  normalized.pomodoroSessionGoal = Number.isInteger(normalized.pomodoroSessionGoal)
+    ? Math.max(1, Math.min(24, normalized.pomodoroSessionGoal)) : 6;
   const pomodoroPos = normalized.pomodoroPos;
   normalized.pomodoroPos = pomodoroPos && Number.isFinite(pomodoroPos.x) && Number.isFinite(pomodoroPos.y)
     ? { x: pomodoroPos.x, y: pomodoroPos.y } : null;
+
+  normalized.dictionaryEnabled = normalized.dictionaryEnabled !== false;
+  const dictionaryPos = normalized.dictionaryPos;
+  normalized.dictionaryPos = dictionaryPos && Number.isFinite(dictionaryPos.x) && Number.isFinite(dictionaryPos.y)
+    ? { x: dictionaryPos.x, y: dictionaryPos.y } : null;
+  normalized.dictionarySize = normalizeDictionarySize(normalized.dictionarySize);
+  if (!isDictionaryLanguage(normalized.dictionaryLanguage)) {
+    normalized.dictionaryLanguage = DEFAULT_SETTINGS.dictionaryLanguage;
+  }
+  normalized.dictionaryHistory = normalizeDictionaryHistory(normalized.dictionaryHistory);
 
   // Preserve the previous scale preference for fidgets only.
   const fidgetScale = Number(settings?.fidgetScale ?? settings?.gadgetScale ?? DEFAULT_SETTINGS.fidgetScale);
@@ -225,6 +288,7 @@ export function normalizeSettings(settings = {}) {
   const until = Number(normalized.distractionUntil);
   normalized.distractionUntil = Number.isFinite(until) && until > 0 ? until : 0;
   normalized.contentBreakDelayEnabled = normalized.contentBreakDelayEnabled !== false;
+  normalized.contentBreakLock = normalizeContentBreakLock(normalized.contentBreakLock);
 
   const reasons = Array.isArray(normalized.recentReasons) ? normalized.recentReasons : [];
   normalized.recentReasons = reasons
@@ -241,6 +305,85 @@ export function normalizeSettings(settings = {}) {
   };
 
   return normalized;
+}
+
+export function isDictionaryLanguage(code) {
+  return DICTIONARY_LANGUAGES.some((language) => language.code === code);
+}
+
+export function normalizeDictionarySize(size) {
+  if (!size || !Number.isFinite(size.width) || !Number.isFinite(size.height)) {
+    return null;
+  }
+  const clamp = (value, min) => Math.round(Math.min(Math.max(value, min), DICTIONARY_MAX_SIZE));
+  return { width: clamp(size.width, DICTIONARY_MIN_WIDTH), height: clamp(size.height, DICTIONARY_MIN_HEIGHT) };
+}
+
+export function dictionaryKey(lang, term) {
+  return `${lang}:${String(term).trim().toLocaleLowerCase()}`;
+}
+
+function dictionaryText(value, max) {
+  return String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+// Returns a clean entry, or null when it is unusable.
+export function normalizeDictionaryEntry(entry) {
+  if (!entry || typeof entry !== "object" || !isDictionaryLanguage(entry.lang)) {
+    return null;
+  }
+
+  const term = dictionaryText(entry.term, DICTIONARY_TERM_MAX_CHARS);
+  const translation = dictionaryText(entry.translation, DICTIONARY_TRANSLATION_MAX_CHARS);
+  if (!term || !translation) {
+    return null;
+  }
+
+  const definitions = (Array.isArray(entry.definitions) ? entry.definitions : [])
+    .map((definition) => dictionaryText(definition, DICTIONARY_DEFINITION_MAX_CHARS))
+    .filter(Boolean)
+    .slice(0, DICTIONARY_DEFINITIONS_MAX);
+  const at = Number(entry.at);
+
+  return {
+    lang: entry.lang,
+    term,
+    translation,
+    definitions,
+    source: DICTIONARY_SOURCES.includes(entry.source) ? entry.source : "wiktionary",
+    at: Number.isFinite(at) && at > 0 ? Math.floor(at) : 0
+  };
+}
+
+export function normalizeDictionaryHistory(history) {
+  const seen = new Set();
+  const entries = [];
+  for (const item of Array.isArray(history) ? history : []) {
+    const entry = normalizeDictionaryEntry(item);
+    const key = entry && dictionaryKey(entry.lang, entry.term);
+    if (!entry || seen.has(key)) continue;
+    seen.add(key);
+    entries.push(entry);
+    if (entries.length === DICTIONARY_HISTORY_MAX) break;
+  }
+  return entries;
+}
+
+// Put an entry at the top of the history, replacing an earlier lookup of the
+// same term in the same language, and drop the oldest past the cap.
+export function addDictionaryEntry(history, entry) {
+  const next = normalizeDictionaryEntry(entry);
+  if (!next) {
+    return normalizeDictionaryHistory(history);
+  }
+  const key = dictionaryKey(next.lang, next.term);
+  const rest = normalizeDictionaryHistory(history).filter((item) => dictionaryKey(item.lang, item.term) !== key);
+  return [next, ...rest].slice(0, DICTIONARY_HISTORY_MAX);
+}
+
+export function removeDictionaryEntry(history, lang, term) {
+  const key = dictionaryKey(lang, term);
+  return normalizeDictionaryHistory(history).filter((item) => dictionaryKey(item.lang, item.term) !== key);
 }
 
 export function normalizeFidgetScale(value) {
@@ -317,6 +460,84 @@ export function isBlockingActive(settings, now = Date.now()) {
   return getFocusState(settings, now) === "focused" && settings.blockList.length > 0;
 }
 
+export function normalizeContentBreakLock(value) {
+  const fallback = DEFAULT_SETTINGS.contentBreakLock;
+  const source = value && typeof value === "object" ? value : {};
+  const days = Array.isArray(source.days) ? source.days : fallback.days;
+  const isMinute = (minute) => Number.isInteger(minute) && minute >= 0 && minute < MINUTES_PER_DAY;
+  return {
+    enabled: source.enabled === true,
+    days: [...new Set(days.filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))].sort((a, b) => a - b),
+    start: isMinute(source.start) ? source.start : fallback.start,
+    end: isMinute(source.end) ? source.end : fallback.end
+  };
+}
+
+// Each selected day opens a lock window at `start` on that day. Local-date
+// arithmetic keeps the windows on wall-clock times across DST changes.
+function contentBreakLockWindows(lock, now, firstOffset, lastOffset) {
+  const today = new Date(now);
+  const duration = (lock.end - lock.start + MINUTES_PER_DAY) % MINUTES_PER_DAY || MINUTES_PER_DAY;
+  const windows = [];
+  for (let offset = firstOffset; offset <= lastOffset; offset += 1) {
+    const date = today.getDate() + offset;
+    if (!lock.days.includes(new Date(today.getFullYear(), today.getMonth(), date).getDay())) continue;
+    windows.push({
+      start: new Date(today.getFullYear(), today.getMonth(), date, 0, lock.start).getTime(),
+      end: new Date(today.getFullYear(), today.getMonth(), date, 0, lock.start + duration).getTime()
+    });
+  }
+  return windows;
+}
+
+// When content breaks unlock again: 0 if they're available now, Infinity if
+// the schedule covers every hour of every day.
+export function getContentBreakLockEnd(value, now = Date.now()) {
+  const lock = normalizeContentBreakLock(value);
+  if (!lock.enabled || lock.days.length === 0) return 0;
+  if (lock.days.length === 7 && lock.start === lock.end) return Infinity;
+
+  const windows = contentBreakLockWindows(lock, now, -1, 8);
+  let until = now;
+  let current;
+  // Follow back-to-back windows (such as all-day weekdays) to the real unlock.
+  while ((current = windows.find((item) => item.start <= until && until < item.end))) {
+    until = current.end;
+  }
+  return until === now ? 0 : until;
+}
+
+// When the next lock window opens after `now`, or 0 if none is scheduled.
+export function getNextContentBreakLockStart(value, now = Date.now()) {
+  const lock = normalizeContentBreakLock(value);
+  if (!lock.enabled) return 0;
+  const next = contentBreakLockWindows(lock, now, 0, 7).find((item) => item.start > now);
+  return next ? next.start : 0;
+}
+
+export function formatMinutesOfDay(minutes, hour24 = false) {
+  const hour = Math.floor(minutes / 60) % 24;
+  const minute = String(minutes % 60).padStart(2, "0");
+  if (hour24) return `${String(hour).padStart(2, "0")}:${minute}`;
+  return `${hour % 12 || 12}${minute === "00" ? "" : `:${minute}`} ${hour < 12 ? "AM" : "PM"}`;
+}
+
+// "at 6 PM", "tomorrow at 6 PM", or "on Monday at 8 AM" for a moment within
+// the coming week.
+export function formatScheduleMoment(timestamp, now = Date.now(), hour24 = false) {
+  const date = new Date(timestamp);
+  const time = formatMinutesOfDay(date.getHours() * 60 + date.getMinutes(), hour24);
+  const today = new Date(now);
+  const days = Math.round(
+    (new Date(date.getFullYear(), date.getMonth(), date.getDate()) -
+      new Date(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000
+  );
+  if (days === 0) return `at ${time}`;
+  if (days === 1) return `tomorrow at ${time}`;
+  const weekday = SCHEDULE_DAYS.find((item) => item.day === date.getDay()).long;
+  return `on ${weekday} at ${time}`;
+}
+
 export function pomodoroDuration(phase) {
   return (phase === "break" ? 5 : 25) * 60 * 1000;
 }
@@ -327,7 +548,9 @@ export function normalizePomodoro(value) {
   const remainingMs = Number.isFinite(value?.remainingMs) && value.remainingMs > 0
     ? Math.min(duration, value.remainingMs) : duration;
   const endsAt = Number.isSafeInteger(value?.endsAt) && value.endsAt > 0 ? value.endsAt : 0;
-  return { phase, remainingMs, endsAt };
+  const completedSessions = Number.isSafeInteger(value?.completedSessions) && value.completedSessions >= 0
+    ? value.completedSessions : 0;
+  return { phase, remainingMs, endsAt, completedSessions };
 }
 
 // Use a deadline so suspended or closed tabs do not slow the countdown. The
@@ -339,7 +562,8 @@ export function getPomodoroState(value, now = Date.now()) {
     return { ...state, remainingMs: Math.min(pomodoroDuration(state.phase), state.endsAt - now) };
   }
   const phase = state.phase === "focus" ? "break" : "focus";
-  return { phase, remainingMs: pomodoroDuration(phase), endsAt: 0 };
+  return { phase, remainingMs: pomodoroDuration(phase), endsAt: 0,
+    completedSessions: Math.min(Number.MAX_SAFE_INTEGER, state.completedSessions + (state.phase === "focus" ? 1 : 0)) };
 }
 
 export async function loadSettings() {

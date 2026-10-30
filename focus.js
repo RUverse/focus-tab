@@ -3,6 +3,9 @@ import {
   onSettingsChanged,
   saveSettings,
   getFocusState,
+  getPomodoroState,
+  getContentBreakLockEnd,
+  formatScheduleMoment,
   DISTRACTION_MIN_MINUTES,
   DISTRACTION_MAX_MINUTES,
   MAX_RECENT_REASONS
@@ -11,6 +14,7 @@ import { createSettingsPanel } from "./settings-panel.js";
 import { createMeditation } from "./meditation.js";
 
 const focusEl = document.getElementById("focus");
+const focusStatus = document.getElementById("focusStatus");
 const focusStartBtn = document.getElementById("focusStart");
 const distractionOpenBtn = document.getElementById("distractionOpen");
 const distractionRemainingEl = document.getElementById("distractionRemaining");
@@ -24,6 +28,9 @@ const distractionModal = document.getElementById("distractionModal");
 const distractionDialog = distractionModal.querySelector(".modal");
 const breakMove = document.getElementById("breakMove");
 const breakConsume = document.getElementById("breakConsume");
+const breakConsumeSlot = document.getElementById("breakConsumeSlot");
+const breakConsumeLock = document.getElementById("breakConsumeLock");
+const breakConsumeTooltip = document.getElementById("breakConsumeTooltip");
 const breakMeditate = document.getElementById("breakMeditate");
 const breakChoices = breakMove.parentElement;
 const afkClose = document.getElementById("afkClose");
@@ -74,6 +81,7 @@ onSettingsChanged((next) => {
     renderSettingsModal();
   }
   if (!distractionModal.hidden) {
+    renderConsumeLock();
     syncConfirmEnabled();
   }
 });
@@ -86,7 +94,11 @@ settingsClose.addEventListener("click", () => closeModal(blockModal));
 
 distractionCancel.addEventListener("click", () => closeModal(distractionModal));
 breakMove.addEventListener("click", () => setBreakStep("afk"));
-breakConsume.addEventListener("click", () => setBreakStep("consume"));
+breakConsume.addEventListener("click", () => {
+  if (!renderConsumeLock()) {
+    setBreakStep("consume");
+  }
+});
 breakMeditate.addEventListener("click", () => {
   closeModal(distractionModal);
   meditation.open();
@@ -125,9 +137,20 @@ function render() {
   const now = Date.now();
   const state = getFocusState(settings, now);
   focusEl.dataset.state = state;
+  const pomodoro = getPomodoroState(settings.pomodoro, now);
+  const label = pomodoro.phase === "focus" && pomodoro.endsAt ? "Focused." : "No distractions.";
+  if (focusStatus.textContent !== label) focusStatus.textContent = label;
 
   if (state === "distracted") {
     distractionRemainingEl.textContent = formatRemaining(settings.distractionUntil - now);
+  }
+
+  // A lock window can open or close while the break picker is showing.
+  if (!distractionModal.hidden) {
+    renderConsumeLock(now);
+    if (distractionDialog.dataset.step === "consume") {
+      syncConfirmEnabled();
+    }
   }
 }
 
@@ -135,7 +158,7 @@ async function onFocusStart() {
   const state = getFocusState(settings);
 
   if (state === "distracted") {
-    // "Focus" during a break ends the break and resumes blocking.
+    // "No distractions" during a break ends it and resumes blocking.
     await saveSettings({ distractionUntil: 0 });
     return;
   }
@@ -171,8 +194,35 @@ function openDistractionModal() {
   stopConsumeDelayTimer();
   syncConfirmEnabled();
   renderReasonHistory();
+  renderConsumeLock();
   distractionModal.hidden = false;
   setBreakStep("choice");
+}
+
+// During the user's lock hours the consume choice stays visible and focusable,
+// with a lock icon and a tooltip saying when it opens again. Returns whether
+// content breaks are locked right now.
+function renderConsumeLock(now = Date.now()) {
+  const lockedUntil = getContentBreakLockEnd(settings.contentBreakLock, now);
+  const locked = lockedUntil > 0;
+
+  breakConsumeSlot.toggleAttribute("data-locked", locked);
+  breakConsumeLock.toggleAttribute("hidden", !locked);
+  if (!locked) {
+    breakConsume.removeAttribute("aria-disabled");
+    breakConsume.removeAttribute("aria-describedby");
+    return false;
+  }
+
+  const message = lockedUntil === Infinity
+    ? "Content breaks are locked all week. Change the hours in Settings."
+    : `You can do it later. Content breaks unlock ${formatScheduleMoment(lockedUntil, now, settings.hour24)}.`;
+  if (breakConsumeTooltip.textContent !== message) {
+    breakConsumeTooltip.textContent = message;
+  }
+  breakConsume.setAttribute("aria-disabled", "true");
+  breakConsume.setAttribute("aria-describedby", breakConsumeTooltip.id);
+  return true;
 }
 
 // Past reasons sit faded behind the dial — oldest at the top, the most recent
@@ -196,7 +246,7 @@ function setBreakStep(step) {
     stopConsumeDelayTimer();
     syncConfirmEnabled();
     randomizeBreakChoices();
-    breakChoices.firstElementChild.focus();
+    breakChoices.querySelector('.break-choice:not([aria-disabled="true"])').focus();
   } else if (step === "consume") {
     startConsumeDelayTimer();
     reasonInput.focus();
@@ -209,7 +259,7 @@ function setBreakStep(step) {
 }
 
 function randomizeBreakChoices() {
-  const choices = [breakMove, breakConsume, breakMeditate];
+  const choices = [breakMove, breakConsumeSlot, breakMeditate];
   for (let i = choices.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [choices[i], choices[j]] = [choices[j], choices[i]];
@@ -217,34 +267,43 @@ function randomizeBreakChoices() {
   breakChoices.replaceChildren(...choices);
 }
 
-// A break can only start after a clear reason and today's delay have both passed.
+// A break can only start outside the lock hours, after a clear reason and
+// today's delay have both passed.
 function syncConfirmEnabled() {
   const validation = validateBreakReason(reasonInput.value);
   const remainingSeconds = getConsumeDelayRemainingSeconds();
   const waiting = remainingSeconds > 0;
+  const locked = getContentBreakLockEnd(settings.contentBreakLock) > 0;
 
   if (!waiting) {
     stopConsumeDelayTimer();
   }
 
-  distractionConfirm.disabled = !validation.valid || waiting;
-  distractionConfirm.textContent = waiting ? `Wait ${formatDelay(remainingSeconds)}` : "Start break";
+  distractionConfirm.disabled = !validation.valid || waiting || locked;
+  const label = waiting ? `Wait ${formatDelay(remainingSeconds)}` : "Start break";
+  if (distractionConfirm.textContent !== label) {
+    distractionConfirm.textContent = label;
+  }
 
   let message = "";
-  if (!validation.valid && reasonInput.value.trim()) {
+  if (locked) {
+    message = "Content breaks are locked right now. You can do it later.";
+  } else if (!validation.valid && reasonInput.value.trim()) {
     message = validation.message;
   } else if (waiting) {
     const breakNumber = getContentBreakCount() + 1;
     message = `Break ${breakNumber} today unlocks in ${formatDelay(remainingSeconds)}.`;
   }
 
-  reasonFeedback.textContent = message;
+  if (reasonFeedback.textContent !== message) {
+    reasonFeedback.textContent = message;
+  }
   reasonFeedback.hidden = !message;
 }
 
 async function onConfirmDistraction() {
   const validation = validateBreakReason(reasonInput.value);
-  if (!validation.valid || getConsumeDelayRemainingSeconds() > 0) {
+  if (!validation.valid || getConsumeDelayRemainingSeconds() > 0 || getContentBreakLockEnd(settings.contentBreakLock) > 0) {
     syncConfirmEnabled();
     return;
   }

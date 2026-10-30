@@ -72,7 +72,10 @@ These instructions apply to the entire repository.
 - `focus.js` / `background.js`: focus sessions, breaks, and blocking enforcement
 - `settings-panel.js` / `popup.js`: reusable settings UI surfaces
 - `wave-background.js`: preset inventory and package mounting
-- `fidget.js` / `sticky-note.js`: optional draggable gadgets
+- `fidget.js` / `sticky-note.js` / `pomodoro.js` / `dictionary.js`: optional
+  draggable gadgets
+- `dictionary-lookup.js`: Wiktionary parsing and translation fallbacks; the
+  only module that makes network requests
 - `build.mjs`: Chrome/Firefox packaging and wave bundling
 
 ## Change workflow

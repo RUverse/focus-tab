@@ -14,6 +14,7 @@
     <script type="module" src="fidget.js"></script>
     <script type="module" src="sticky-note.js"></script>
     <script type="module" src="pomodoro.js"></script>
+    <script type="module" src="dictionary.js"></script>
   </head>
   <body>
     <main class="newtab" id="newtab" aria-live="polite">
@@ -64,10 +65,10 @@
         </figure>
 
         <div class="focus" id="focus" data-state="idle">
-          <button type="button" class="focus-start" id="focusStart">Focus</button>
+          <button type="button" class="focus-start" id="focusStart">No distractions</button>
 
           <div class="focus-focused">
-            <p class="focus-status">Focused.</p>
+            <p class="focus-status" id="focusStatus" role="status">No distractions.</p>
             <button type="button" class="distraction-open" id="distractionOpen">
               I need a break
             </button>
@@ -116,10 +117,28 @@
         </div>
         <div class="pomodoro-time" id="pomodoroTime" role="timer" aria-live="off">25:00</div>
         <p class="pomodoro-status" id="pomodoroStatus" role="status" aria-live="polite">Ready to focus</p>
+        <div class="pomodoro-progress" id="pomodoroProgress" role="progressbar" aria-label="Completed focus sessions" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"></div>
         <div class="pomodoro-actions">
           <button type="button" id="pomodoroToggle">Start</button>
           <button type="button" id="pomodoroReset">Reset</button>
         </div>
+      </section>
+
+      <section class="dictionary ui-panel" id="dictionary" aria-label="Dictionary" hidden>
+        <button type="button" class="dictionary-handle" id="dictionaryHandle" aria-label="Move dictionary. Use arrow keys to move." title="Drag to move, or use arrow keys"></button>
+        <form class="dictionary-form" id="dictionaryForm" role="search" aria-label="Look up a word or phrase">
+          <input class="dictionary-input" id="dictionaryInput" type="text" maxlength="500" placeholder="Word or phrase" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-describedby="dictionaryStatus">
+          <span class="dictionary-language ui-control" id="dictionaryLanguageBox">
+            <span class="dictionary-language-code" id="dictionaryLanguageCode" aria-hidden="true"></span>
+            <select id="dictionaryLanguage" aria-label="Language to look up"></select>
+          </span>
+        </form>
+        <p class="dictionary-status" id="dictionaryStatus" role="status" aria-live="polite"></p>
+        <ol class="dictionary-history" id="dictionaryHistory" aria-label="Lookup history"></ol>
+        <div class="dictionary-footer">
+          <span class="dictionary-credit">Words from <a href="https://www.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a></span>
+        </div>
+        <button type="button" class="dictionary-resize" id="dictionaryResize" aria-label="Resize dictionary. Use arrow keys to resize." title="Drag to resize, double-click to reset"></button>
       </section>
 
       <div class="gadget-toolbar" role="group" aria-label="Gadget visibility and settings">
@@ -131,7 +150,7 @@
             <circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/>
           </svg>
         </button>
-        <!-- Tabler Icons (MIT): note and hourglass-empty. See icons/LICENSE-tabler.txt. -->
+        <!-- Tabler Icons (MIT): note, hourglass-empty, and language. See icons/LICENSE-tabler.txt. -->
         <button type="button" class="gadget-toggle" data-gadget-toggle="stickyNoteList" aria-label="Sticky note" aria-controls="stickyNoteList" aria-pressed="true" title="Hide sticky note" hidden>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M13 20l7 -7"/>
@@ -142,6 +161,15 @@
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1"/>
             <path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1"/>
+          </svg>
+        </button>
+        <button type="button" class="gadget-toggle" data-gadget-toggle="dictionary" aria-label="Dictionary" aria-controls="dictionary" aria-pressed="true" title="Hide Dictionary" hidden>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 5h7"/>
+            <path d="M9 3v2c0 4.418 -2.239 8 -5 8"/>
+            <path d="M5 9c0 2.144 2.952 3.908 6.7 4"/>
+            <path d="M12 20l4 -9l4 9"/>
+            <path d="M19.1 18h-6.2"/>
           </svg>
         </button>
         <button type="button" class="gear-button" id="gearButton" aria-label="Settings" title="Settings">
@@ -175,7 +203,18 @@
           <div class="break-choices">
             <button type="button" class="break-choice" id="breakMove">Let's move that body</button>
             <button type="button" class="break-choice" id="breakMeditate">Let's meditate</button>
-            <button type="button" class="break-choice" id="breakConsume">Let's consume some content</button>
+            <span class="break-choice-slot" id="breakConsumeSlot">
+              <button type="button" class="break-choice" id="breakConsume">
+                <!-- Tabler Icons (MIT): lock. See icons/LICENSE-tabler.txt. -->
+                <svg class="break-choice-lock" id="breakConsumeLock" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" hidden>
+                  <path d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z"/>
+                  <path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0"/>
+                  <path d="M8 11v-4a4 4 0 1 1 8 0v4"/>
+                </svg>
+                <span>Let's consume some content</span>
+              </button>
+              <span class="break-choice-tooltip" id="breakConsumeTooltip" role="tooltip"></span>
+            </span>
           </div>
           <div class="modal-actions">
             <span class="spacer"></span>

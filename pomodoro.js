@@ -6,6 +6,7 @@ const time = document.getElementById("pomodoroTime");
 const status = document.getElementById("pomodoroStatus");
 const toggle = document.getElementById("pomodoroToggle");
 const reset = document.getElementById("pomodoroReset");
+const progress = document.getElementById("pomodoroProgress");
 const phases = [...panel.querySelectorAll("[data-pomodoro-phase]")];
 let settings = await loadSettings();
 let ticker = 0;
@@ -18,7 +19,7 @@ function render() {
   window.clearInterval(ticker);
   if (panel.hidden) return;
   // Keep the timer at 1x, shrinking only to fit very small viewports.
-  const scale = Math.min(1, (innerWidth - 32) / 240, (innerHeight - 32) / 246);
+  const scale = Math.min(1, (innerWidth - 32) / 240, (innerHeight - 32) / 300);
   panel.style.setProperty("--pomodoro-scale", Math.max(0.5, scale));
   if (!dragging) position(settings.pomodoroPos);
   tick();
@@ -27,6 +28,20 @@ function render() {
 
 function tick() {
   const state = getPomodoroState(settings.pomodoro);
+  const goal = settings.pomodoroSessionGoal;
+  if (progress.children.length !== goal) {
+    progress.replaceChildren(...Array.from({ length: goal }, () => {
+      const segment = document.createElement("span");
+      segment.setAttribute("aria-hidden", "true");
+      return segment;
+    }));
+  }
+  [...progress.children].forEach((segment, index) => {
+    segment.classList.toggle("is-complete", index < state.completedSessions);
+  });
+  progress.setAttribute("aria-valuemax", String(goal));
+  progress.setAttribute("aria-valuenow", String(Math.min(state.completedSessions, goal)));
+  progress.setAttribute("aria-valuetext", `${state.completedSessions} of ${goal} sessions completed`);
   const seconds = Math.ceil(state.remainingMs / 1000);
   time.textContent = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
   toggle.textContent = state.endsAt ? "Pause" : state.remainingMs < pomodoroDuration(state.phase) ? "Resume" : "Start";
@@ -60,17 +75,23 @@ async function changeTimer(action) {
   settings = await loadSettings();
   const now = Date.now();
   const state = getPomodoroState(settings.pomodoro, now);
-  await persist({ pomodoro: action(state, now) });
+  const pomodoro = action(state, now);
+  // Starting or resuming a focus interval also resumes website blocking.
+  const startsFocus = pomodoro.phase === "focus" && pomodoro.endsAt && !state.endsAt;
+  await persist({
+    pomodoro,
+    ...(startsFocus ? { focusActive: true, distractionUntil: 0 } : {})
+  });
 }
 
 toggle.addEventListener("click", () => changeTimer((state, now) => ({
   ...state, endsAt: state.endsAt ? 0 : now + state.remainingMs
 })));
 reset.addEventListener("click", () => changeTimer((state) => ({
-  phase: state.phase, remainingMs: pomodoroDuration(state.phase), endsAt: 0
+  ...state, phase: state.phase, remainingMs: pomodoroDuration(state.phase), endsAt: 0
 })));
-phases.forEach((button) => button.addEventListener("click", () => changeTimer(() => ({
-  phase: button.dataset.pomodoroPhase, remainingMs: pomodoroDuration(button.dataset.pomodoroPhase), endsAt: 0
+phases.forEach((button) => button.addEventListener("click", () => changeTimer((state) => ({
+  ...state, phase: button.dataset.pomodoroPhase, remainingMs: pomodoroDuration(button.dataset.pomodoroPhase), endsAt: 0
 }))));
 
 function position(point) {

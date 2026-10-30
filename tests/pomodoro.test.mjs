@@ -10,7 +10,7 @@ test("malformed Pomodoro timer settings recover", () => {
     const settings = normalizeSettings({ pomodoro: value, pomodoroEnabled: "false", pomodoroPos: { x: NaN, y: 2 } });
     assert.equal(settings.pomodoroEnabled, false);
     assert.equal(settings.pomodoroPos, null);
-    assert.deepEqual(settings.pomodoro, { phase: "focus", remainingMs: focus, endsAt: 0 });
+    assert.deepEqual(settings.pomodoro, { phase: "focus", remainingMs: focus, endsAt: 0, completedSessions: 0 });
   }
   assert.equal(normalizeSettings({ pomodoro: { phase: "break", remainingMs: focus } }).pomodoro.remainingMs, rest);
 });
@@ -25,7 +25,7 @@ test("each expired interval cues the next phase, paused, even after a long absen
   for (const [phase, next, duration] of [["focus", "break", rest], ["break", "focus", focus]]) {
     const stored = { phase, remainingMs: pomodoroDuration(phase), endsAt: 1000 };
     for (const now of [1000, 100000000]) {
-      assert.deepEqual(getPomodoroState(stored, now), { phase: next, remainingMs: duration, endsAt: 0 });
+      assert.deepEqual(getPomodoroState(stored, now), { phase: next, remainingMs: duration, endsAt: 0, completedSessions: phase === "focus" ? 1 : 0 });
     }
     assert.equal(stored.phase, phase);
   }
@@ -37,4 +37,27 @@ test("pausing preserves time and resuming creates a new deadline", () => {
   assert.equal(getPomodoroState(paused, 999000).remainingMs, focus - 30000);
   const resumed = { ...paused, endsAt: 999000 + paused.remainingMs };
   assert.equal(getPomodoroState(resumed, 1000000).remainingMs, focus - 31000);
+});
+
+test("session goals and legacy or malformed counts normalize safely", () => {
+  assert.equal(normalizeSettings({}).pomodoroSessionGoal, 6);
+  for (const value of [null, "8", 2.5, Infinity]) {
+    assert.equal(normalizeSettings({ pomodoroSessionGoal: value }).pomodoroSessionGoal, 6);
+  }
+  assert.equal(normalizeSettings({ pomodoroSessionGoal: 0 }).pomodoroSessionGoal, 1);
+  assert.equal(normalizeSettings({ pomodoroSessionGoal: 99 }).pomodoroSessionGoal, 24);
+  for (const completedSessions of [undefined, -1, 1.5, "3", Infinity]) {
+    assert.equal(getPomodoroState({ completedSessions }).completedSessions, 0);
+  }
+});
+
+test("completed focus counts once across repeated reads, reloads and the following break", () => {
+  const stored = { phase: "focus", remainingMs: focus, endsAt: 1000, completedSessions: 5 };
+  const completed = getPomodoroState(stored, 2000);
+  assert.equal(completed.completedSessions, 6);
+  assert.deepEqual(getPomodoroState(stored, 3000), completed);
+  assert.deepEqual(getPomodoroState(JSON.parse(JSON.stringify(completed)), 4000), completed);
+  const breakDone = getPomodoroState({ ...completed, endsAt: 5000 }, 6000);
+  assert.equal(breakDone.completedSessions, 6);
+  assert.equal(breakDone.phase, "focus");
 });

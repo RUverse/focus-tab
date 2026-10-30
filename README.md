@@ -4,7 +4,7 @@
 
 inspired by WHA Quotes & Clock New Tab Clone (not maintained anymore)
 
-A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab extension. Its packaged runtime is self-contained and offline; development uses esbuild, the published `@ruverse/waves` package for animated backgrounds, and Moment.js for customizable date formatting.
+A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab extension. Its packaged runtime is self-contained and works offline; only the optional dictionary gadget goes online, and only when you look something up. Development uses esbuild, the published `@ruverse/waves` package for animated backgrounds, and Moment.js for customizable date formatting.
 
 ## Features
 
@@ -15,13 +15,17 @@ A Chrome and Firefox extension inspired by the old WHA Quotes & Clock New Tab ex
 - Live local clock with optional seconds and 24-hour format
 - Custom accent color, with a reset to the theme default
 - Optional progress bars for the day, month, and year
-- Optional new-tab gadgets: motivational quotes, fidget toys, a sticky note list, and a Pomodoro timer
+- Optional new-tab gadgets: motivational quotes, fidget toys, a sticky note list, a Pomodoro timer, and a dictionary
 - Greeting and date with a customizable Moment.js format
 - Rotating motivational quotes
-- **Focus mode**: a Focus button below the quote. Build a block list of sites. while focused those sites can't be opened and are redirected to this page instead.
+- **No distractions**: a button below the quote enables website blocking. Sites on your block list redirect to this page.
 - **Distraction breaks**: from the focused view, open the break picker and drag
   the dial to set 1 minute – 4 hours. During a break the blocked sites open
   normally and the new tab shows a `DISTRACTED` indicator counting down.
+- **Lock content breaks**: pick days and a time range (for example Monday to
+  Friday, 8 AM to 6 PM) under **Settings → Block list**. During those hours the
+  "Let's consume some content" break shows a lock icon, can't be started, and
+  its tooltip says when it unlocks. Moving and meditating stay available.
 - **For later**: when a tab is parked on the focus page by the blocker, it shows
   the blocked page's title (falling back to its host) and sets the tab title to
   match, so blocked tabs stay identifiable in the tab strip. The original page
@@ -45,21 +49,30 @@ so it does not trigger the Chrome Web Store's in-depth host-permission review:
   of audible tabs for the "Now playing" panel.
 - `webNavigation` — catch navigation to a blocked site before it loads.
 
-No data is collected or transmitted; everything stays on your device. The
+No data is collected, and settings stay on your device. The one exception is
+the dictionary gadget: when you look something up, it sends that word or phrase
+to Wiktionary and, for phrases, possibly to MyMemory (see
+[Dictionary gadget](#dictionary-gadget)). These are ordinary CORS requests, so
+no host permissions are needed. The
 "Now playing" panel shows playing tabs but cannot read media metadata (song,
 artist, artwork) or pause playback, since that would require injecting code
 into pages and broad host access.
 
 ## How focus mode works
 
-- Clicking **Focus** the first time opens the block-list editor. Add sites and
+- Clicking **No distractions** the first time opens the block-list editor. Add sites and
   press *Start focus*.
-- While focused, the page shows **Focused.** plus a button to start a break.
+- While blocking is enabled, the page shows **No distractions.** plus a button
+  to start a break. **Focused.** appears only during a running Pomodoro focus interval.
 - Starting a break sets `distractionUntil`; the background worker drops the
   blocking rules until it elapses, then restores them automatically.
-- Clicking **Focus** during a break ends it early and resumes blocking.
+- Clicking **No distractions** during a break ends it early and resumes blocking.
+- **Lock content breaks** stores the selected weekdays and a From/To time. A
+  "To" earlier than "From" runs overnight into the next day, and equal times
+  lock the whole day. A content break started before the lock begins keeps
+  running until its timer ends.
 
-Spinner, sticky note, and Pomodoro are enabled but hidden by default.
+Spinner, sticky note, Pomodoro, and dictionary are enabled but hidden by default.
 Use their bottom icons to show them. Enabled gadgets have visibility buttons beside
 the settings gear. Click an icon to hide or show its gadget. Visibility is saved
 without clearing gadget content, position, or timer state.
@@ -75,7 +88,45 @@ Enable **Pomodoro** in **Settings → Gadgets** for 25-minute focus intervals an
 Focus/Break to switch. Each completed interval cues the next one; press Start
 when ready. The timer survives reloads and stays in sync across new tabs. Drag
 its line handle (or use arrow keys while the handle is focused) to move it.
-The timer works independently of website blocking.
+The progress bar has one segment per focus session, filled as sessions finish,
+with a default goal of six. Adjust
+the goal (1–24) in **Settings → Gadgets → Pomodoro sessions**. Progress survives
+reloads.
+Resetting an interval or switching Focus/Break does not count as a completed session.
+Starting or resuming a Pomodoro focus interval automatically enables **No distractions**
+and ends any active distraction break. Pausing, resetting, or finishing the timer
+leaves website blocking enabled. Pomodoro breaks do not unblock websites.
+
+## Dictionary gadget
+
+Show the dictionary with its icon beside the settings gear, or switch it on or
+off in **Settings → Gadgets → Dictionary**. Pick the language you are reading
+with the language code beside the box (English, German, French, Spanish, Italian,
+Dutch, or Portuguese), type a word or phrase, and press Enter. Each result row
+shows the word, its English translation, and a definition in the original
+language below. English words show their parts of speech and English
+definitions instead. The history scrolls and keeps up to 100 lookups; drag the
+bottom-right corner to resize the box (double-click the corner to reset it).
+Looking up a saved word again moves it to the top without going online. Hover
+or focus a row to remove it.
+
+- Words and short set phrases (up to three words) are looked up on
+  [Wiktionary](https://www.wiktionary.org/): English glosses come from English
+  Wiktionary, and definitions from the Wiktionary edition in that language.
+- English lookups use English Wiktionary only; sentences are not translated.
+- Other sentences, and words with no English Wiktionary entry, are machine translated.
+  Chrome uses its built-in on-device Translator when the language model is
+  installed; the first lookup starts downloading it. Otherwise the text is sent
+  to the free [MyMemory](https://mymemory.translated.net/) API, about 5,000
+  characters a day, and the row is marked as a machine translation.
+- Lookups that fail (no match, offline, or the service is down) show a message
+  under the box and are not saved.
+- Firefox asks for permission to send lookups (optional "search terms" data
+  collection) the first time you look up a new word; nothing is sent until you
+  allow it.
+
+The history is stored with your other settings in `chrome.storage.local`. Drag
+the line handle, or focus it and use the arrow keys, to move the gadget.
 
 ## Install locally
 
@@ -108,7 +159,8 @@ The published packages are produced from the source in this repository by
 compact-config adapter, and Moment.js date formatter, which are bundled locally.
 The script also generates `manifest.json` for each target (the Firefox build
 swaps the background to module scripts and adds the
-`browser_specific_settings.gecko` block).
+`browser_specific_settings.gecko` block, which declares no required data
+collection and optional `searchTerms` for dictionary lookups).
 
 ### Build environment
 
