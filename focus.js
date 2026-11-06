@@ -12,6 +12,7 @@ import {
 } from "./shared.js";
 import { createSettingsPanel } from "./settings-panel.js";
 import { createMeditation } from "./meditation.js";
+import { validateBreakReason } from "./break-reason.js";
 
 const focusEl = document.getElementById("focus");
 const focusStatus = document.getElementById("focusStatus");
@@ -48,8 +49,6 @@ const distractionConfirm = document.getElementById("distractionConfirm");
 const DIAL_CENTER = 120;
 const DIAL_RADIUS = 96;
 const DIAL_CIRCUMFERENCE = 2 * Math.PI * DIAL_RADIUS;
-const MIN_REASON_LENGTH = 10;
-const MIN_REASON_WORDS = 3;
 const BREAK_DELAY_SECONDS = [5, 15, 120, 300, 600];
 
 let settings = await loadSettings();
@@ -340,48 +339,6 @@ function stopConsumeDelayTimer() {
 
   window.clearInterval(consumeDelayTimer);
   consumeDelayTimer = null;
-}
-
-function validateBreakReason(value) {
-  const reason = value.trim();
-  const words = reason.match(/[a-z0-9]+(?:['-][a-z0-9]+)?/gi) || [];
-
-  if (reason.length < MIN_REASON_LENGTH) {
-    return { valid: false, message: "Write a clearer reason." };
-  }
-
-  if (words.length < MIN_REASON_WORDS) {
-    return { valid: false, message: "Use at least three words." };
-  }
-
-  if (looksLikeGibberish(reason)) {
-    return { valid: false, message: "Use real words, not random keystrokes." };
-  }
-
-  return { valid: true, message: "" };
-}
-
-function looksLikeGibberish(reason) {
-  const compact = reason.toLowerCase().replace(/[^a-z]/g, "");
-  if (compact.length < 8) {
-    return false;
-  }
-
-  if (/(.)\1{3,}/.test(compact)) {
-    return true;
-  }
-
-  if (/(asdf|fdsa|qwer|rewq|zxcv|vcxz|jkl|lkj)/.test(compact)) {
-    return true;
-  }
-
-  const vowels = compact.match(/[aeiou]/g) || [];
-  const vowelRatio = vowels.length / compact.length;
-  if (vowelRatio < 0.18 || vowelRatio > 0.72) {
-    return true;
-  }
-
-  return /[bcdfghjklmnpqrstvwxyz]{5,}/.test(compact);
 }
 
 function onDialPointerDown(event) {

@@ -29,6 +29,7 @@ const ASSETS = [
   "background.js",
   "fidget.js",
   "focus.js",
+  "break-reason.js",
   "meditation.js",
   "newtab.js",
   "sticky-note.js",
